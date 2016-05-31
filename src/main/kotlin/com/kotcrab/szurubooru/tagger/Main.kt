@@ -34,3 +34,4 @@ fun loadConfig(path: String): ConfigDto {
     val reader = YamlReader(FileReader(path));
     return reader.read(ConfigDto::class.java);
 }
+

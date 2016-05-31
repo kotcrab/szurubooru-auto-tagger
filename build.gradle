@@ -14,6 +14,16 @@ buildscript {
 
 apply plugin: 'java'
 apply plugin: 'kotlin'
+apply plugin: 'application'
+
+mainClassName = "com.kotcrab.szurubooru.tagger.MainKt"
+
+jar {
+    manifest {
+        attributes 'Main-Class': mainClassName
+    }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}
 
 repositories {
     mavenCentral()
