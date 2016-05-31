@@ -1,0 +1,46 @@
+---
+# Post with this tag will be automatically tagged
+triggerTag: auto_tagme
+# Post managed by auto-tagger will have this tag
+taggedTag: auto_tagged
+# If some error occured post will be tagged with this tag
+errorTag: auto_tagger_error
+
+# Controls whether to store Danbooru URL in post source field on Szurubooru
+storeSourceUrl: true
+
+# Ensures that only single instance of auto tagger is running
+singleInstance:
+  enabled: true
+  # Port used for locking, make sure that it is not shared with other application
+  port: 54212
+
+# Tags mapping configuration
+tags:
+  ignoreTags:
+    # Tag test will be ignored
+    - test
+  remapTags:
+    # Tag 'bar' will be rempaed to 'foo'
+    - from: bar
+      to: foo
+    - from: baz
+      to: foobar
+  remapCategories:
+    # Category `bar` will be remaped to 'foo'
+    - from: bar
+      to: foo
+
+# Szurubooru configuration
+szurubooru:
+  apiPath: https://szurubooru.local/api
+  username: auto-tagger
+  password: auto-tagger
+
+# Danbooru configuration
+danbooru:
+  # Whether to authenticate when sending request to Danbooru, using anonymous mode is not recommend as anonymous
+  # user has more restrict API limits
+  anonymous: true
+  username: your-username
+  apiKey: your-api-key

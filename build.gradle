@@ -2,13 +2,13 @@ group 'com.kotcrab.szurubootu.autotagger'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.0.2'
+    ext.kotlinVersion = '1.0.1'
     repositories {
         mavenCentral()
     }
 
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
 
@@ -22,10 +22,10 @@ repositories {
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.7.1-1'
-    compile 'com.fasterxml.jackson.module:jackson-module-kotlin:2.7.1-2'
-    compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.7.1'
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    compile 'com.esotericsoftware.yamlbeans:yamlbeans:1.09'
     compile 'org.jsoup:jsoup:1.9.2'
+    compile 'com.google.code.gson:gson:2.6.2'
+    compile 'commons-codec:commons-codec:1.10'
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
