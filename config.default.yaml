@@ -1,4 +1,6 @@
----
+# Default configuration file
+# Don't modify this file, instead create `config.yaml` and override what you need
+
 # Post with this tag will be automatically tagged
 triggerTag: auto_tagme
 # Post managed by auto-tagger will have this tag
@@ -8,7 +10,6 @@ errorTag: auto_tagger_error
 
 # Controls whether to store Danbooru URL in post source field on Szurubooru
 storeSourceUrl: true
-
 # Ensures that only single instance of auto tagger is running
 singleInstance:
   enabled: true
@@ -17,19 +18,24 @@ singleInstance:
 
 # Tags mapping configuration
 tags:
-  ignoreTags:
-    # Tag test will be ignored
-    - test
-  remapTags:
-    # Tag 'bar' will be rempaed to 'foo'
-    - from: bar
-      to: foo
-    - from: baz
-      to: foobar
-  remapCategories:
-    # Category `bar` will be remaped to 'foo'
-    - from: bar
-      to: foo
+  # If true then additional information about tags such as alliases, suggestions or implications will be retrived from Danbooru
+  obtainAliases: true
+  obtainSuggestions: true
+  obtainImplications: true
+#  ignoreTags:
+#    # Tag test will be ignored
+#    - test
+#    - foo
+#  remapTags:
+#    # Tag 'bar' will be rempaed to 'foo'
+#    - from: bar
+#      to: foo
+#    - from: baz
+#      to: foobar
+#  remapCategories:
+#    # Category `bar` will be remaped to 'foo'
+#    - from: bar
+#      to: foo
 
 # Szurubooru configuration
 szurubooru:

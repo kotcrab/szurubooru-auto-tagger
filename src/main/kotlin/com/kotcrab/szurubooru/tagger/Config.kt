@@ -1,41 +1,46 @@
 package com.kotcrab.szurubooru.tagger;
 
+import java.util.*
+
 class RemapDto {
-    lateinit var from: String
-    lateinit var to: String
+    var from = ""
+    var to = ""
 }
 
 class DanbooruDto {
-    var anonymous: Boolean = true
-    lateinit var username: String
-    lateinit var apiKey: String
+    var anonymous = true
+    var username = "your-username"
+    var apiKey = "your-api-key"
 }
 
 class SzurubooruDto {
-    lateinit var apiPath: String
-    lateinit var username: String
-    lateinit var password: String
+    var apiPath = "https://szurubooru.local/api"
+    var username = "auto-tagger"
+    var password = "auto-tagger"
 }
 
 class SingleInstanceDto {
-    var enabled: Boolean = false
-    var port: Int = 0
+    var enabled = true
+    var port = 54212
 }
 
 class TagsDto {
-    lateinit var ignoreTags: List<String>
-    lateinit var remapTags: List<RemapDto>
-    lateinit var remapCategories: List<RemapDto>
+    var obtainAliases = true
+    var obtainSuggestions = true
+    var obtainImplications = false;
+    var ignoreTags: List<String> = ArrayList();
+    var remapTags: List<RemapDto> = ArrayList();
+    var remapCategories: List<RemapDto> = ArrayList();
 }
 
 class ConfigDto {
-    lateinit var triggerTag: String
-    lateinit var taggedTag: String
-    lateinit var errorTag: String
-    var storeSourceUrl: Boolean = true
+    var triggerTag = "auto_tagme"
+    var taggedTag = "auto_tagged"
+    var errorTag = "auto_tagger_error"
+    var storeSourceUrl = true
 
-    lateinit var tags: TagsDto
-    lateinit var singleInstance: SingleInstanceDto
-    lateinit var szurubooru: SzurubooruDto
-    lateinit var danbooru: DanbooruDto
+    var tags = TagsDto()
+    var singleInstance = SingleInstanceDto()
+    var szurubooru = SzurubooruDto()
+    var danbooru = DanbooruDto()
 }
