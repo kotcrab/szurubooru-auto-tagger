@@ -18,7 +18,7 @@ singleInstance:
 
 # Tags mapping configuration
 tags:
-  # If true then additional information about tags such as alliases, suggestions or implications will be retrived from Danbooru
+  # If true then additional information about tags such as aliases, suggestions or implications will be retrieved from Danbooru
   obtainAliases: true
   obtainSuggestions: true
   obtainImplications: true
@@ -27,15 +27,23 @@ tags:
 #    - test
 #    - foo
 #  remapTags:
-#    # Tag 'bar' will be rempaed to 'foo'
+#    # Tag 'bar' will be remapped to 'foo'
 #    - from: bar
 #      to: foo
 #    - from: baz
 #      to: foobar
 #  remapCategories:
-#    # Category `bar` will be remaped to 'foo'
-#    - from: bar
-#      to: foo
+#    # Danbooru have 4 tags categories which can be remapped to any Szurubooru category
+#    # Category `general` will be remapped to 'default'
+#    - from: general
+#      to: default
+#    - from: artist
+#      to: creator
+#    - from: character
+#      to: hero
+#    - from: copyright
+#      to: series
+
 
 # Szurubooru configuration
 szurubooru:
