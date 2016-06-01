@@ -11,6 +11,6 @@ import org.junit.Test
 class BooruTest {
     @Test
     fun testDanbooruGetPost() {
-        assertTrue(Danbooru(DanbooruDto()).getPost(2376896).startsWith("""{"id":2376896,"""))
+        assertTrue(Danbooru(DanbooruDto()).getPost(2376896).json.toString().startsWith("""{"id":2376896,"""))
     }
 }
