@@ -11,27 +11,30 @@ fun main(args: Array<String>) {
     if (args.size == 0) {
         path = "config.yaml";
         if (File(path).exists() == false)
-            path = "config.default.yaml";
+            path = "config.default.yaml"
     } else if (args.size == 1) {
         path = args[0];
     } else {
         println("Szurubooru auto tagger. Usage: <config-file-path>")
-        println("config-file-path: Path to configuration file. If not specified config.yaml is used or config.default.yaml if former does not exist")
+        println("config-file-path: Path to configuration file. If not specified config.yaml is used or config.default.yaml if former does not exist.")
         return;
     }
 
     if (File(path).exists() == false) {
-        println("Config file does not exist: $path")
+        println("Config file $path does not exist.")
         return;
     }
 
-    println("Szurubooru auto tagger")
-    println("Loading config from: $path")
-    val config = loadConfig(path);
+    log("Szurubooru auto tagger")
+    log("Loading config from $path.")
+
+    val autoTagger = AutoTagger(loadConfig(path))
+    autoTagger.synchronizeTags()
+    autoTagger.dispose()
 }
 
 fun loadConfig(path: String): ConfigDto {
-    val reader = YamlReader(FileReader(path));
-    return reader.read(ConfigDto::class.java);
+    val reader = YamlReader(FileReader(path))
+    return reader.read(ConfigDto::class.java)
 }
 
