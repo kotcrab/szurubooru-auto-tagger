@@ -1,20 +1,16 @@
 # Default configuration file
 # Don't modify this file, instead create `config.yaml` and override what you need
 
-# Post with this tag will be automatically tagged
-triggerTag: auto_tagme
-# Post managed by auto-tagger will have this tag
-taggedTag: auto_tagged
-# If some error occured post will be tagged with this tag
-errorTag: auto_tagger_error
+triggerTag: auto_tagme # Post with this tag will be automatically tagged
+taggedTag: auto_tagged # Post managed by auto-tagger will have this tag
+errorTag: auto_tagger_error # If some error occured post will be tagged with this tag
 
-# Controls whether to store Danbooru URL in post source field on Szurubooru
-storeSourceUrl: true
-# Ensures that only single instance of auto tagger is running
-singleInstance:
+storeSourceUrl: true # Controls whether to store Danbooru URL in post source field on Szurubooru
+updateImageRating: true # If true then post rating (safe, questionable, explicit) will be updated from Danbooru
+
+singleInstance: # Ensures that only single instance of auto tagger is running
   enabled: true
-  # Port used for locking, make sure that it is not shared with other application
-  port: 54212
+  port: 54212   # Port used for locking, make sure that it is not shared with other application
 
 # Tags mapping configuration
 tags:
@@ -23,12 +19,10 @@ tags:
   obtainSuggestions: true
   obtainImplications: true
 #  ignoreTags:
-#    # Tag test will be ignored
-#    - test
+#    - test # Tag test will be ignored
 #    - foo
 #  remapTags:
-#    # Tag 'bar' will be remapped to 'foo'
-#    - from: bar
+#    - from: bar # Tag 'bar' will be remapped to 'foo'
 #      to: foo
 #    - from: baz
 #      to: foobar
@@ -45,14 +39,12 @@ tags:
 #      to: series
 
 
-# Szurubooru configuration
-szurubooru:
+szurubooru: # Szurubooru configuration
   apiPath: https://szurubooru.local/api
   username: auto-tagger
   password: auto-tagger
 
-# Danbooru configuration
-danbooru:
+danbooru: # Danbooru configuration
   # Whether to authenticate when sending request to Danbooru, using anonymous mode is not recommend as anonymous
   # user has more restrict API limits
   anonymous: true

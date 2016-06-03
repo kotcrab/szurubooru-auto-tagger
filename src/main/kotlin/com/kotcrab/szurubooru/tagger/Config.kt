@@ -38,6 +38,7 @@ class ConfigDto {
     var taggedTag = "auto_tagged"
     var errorTag = "auto_tagger_error"
     var storeSourceUrl = true
+    var updateImageRating = true
 
     var tags = TagsDto()
     var singleInstance = SingleInstanceDto()
