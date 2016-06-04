@@ -11,10 +11,11 @@ class DanbooruDto {
     var anonymous = true
     var username = "your-username"
     var apiKey = "your-api-key"
+    var hourRequestLimit = 500
 }
 
 class SzurubooruDto {
-    var apiPath = "https://szurubooru.local/api"
+    var apiPath = "https://szurubooru.local/api/"
     var username = "auto-tagger"
     var password = "auto-tagger"
 }

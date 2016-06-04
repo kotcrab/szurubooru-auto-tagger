@@ -1,20 +1,20 @@
-# Default configuration file
-# Don't modify this file, instead create `config.yaml` and override what you need
+# Default configuration file.
+# Don't modify this file, instead create `config.yaml` and override what you need.
 
-triggerTag: auto_tagme # Post with this tag will be automatically tagged
-taggedTag: auto_tagged # Post managed by auto-tagger will have this tag
-errorTag: auto_tagger_error # If some error occured post will be tagged with this tag
+triggerTag: auto_tagme # Post with this tag will be automatically tagged.
+taggedTag: auto_tagged # Post managed by auto-tagger will have this tag.
+errorTag: auto_tagger_error # If some error occured post will be tagged with this tag.
 
-storeSourceUrl: true # Controls whether to store Danbooru URL in post source field on Szurubooru
-updateImageRating: true # If true then post rating (safe, questionable, explicit) will be updated from Danbooru
+storeSourceUrl: true # Controls whether to store Danbooru URL in post source field on Szurubooru.
+updateImageRating: true # If true then post rating (safe, questionable, explicit) will be updated from Danbooru.
 
-singleInstance: # Ensures that only single instance of auto tagger is running
+singleInstance: # Ensures that only single instance of auto tagger is running.
   enabled: true
-  port: 54212   # Port used for locking, make sure that it is not shared with other application
+  port: 54212   # Port used for locking, make sure that it is not shared with other application.
 
-# Tags mapping configuration
+# Tags mapping configuration.
 tags:
-  # If true then additional information about tags such as aliases, suggestions or implications will be retrieved from Danbooru
+  # If true then additional information about tags such as aliases, suggestions or implications will be retrieved from Danbooru.
   obtainAliases: true
   obtainSuggestions: true
   obtainImplications: true
@@ -27,8 +27,8 @@ tags:
 #    - from: baz
 #      to: foobar
 #  remapCategories:
-#    # Danbooru have 4 tags categories which can be remapped to any Szurubooru category
-#    # Category `general` will be remapped to 'default'
+#    # Danbooru have 4 tags categories which can be remapped to any Szurubooru category.
+#    # Category `general` will be remapped to 'default'.
 #    - from: general
 #      to: default
 #    - from: artist
@@ -40,13 +40,16 @@ tags:
 
 
 szurubooru: # Szurubooru configuration
-  apiPath: https://szurubooru.local/api
-  username: auto-tagger
+  apiPath: http://szurubooru.local/api/
+  username: auto-tagger # Auto-tagger should have its own separate account, make sure it has high enough privileges.
   password: auto-tagger
 
 danbooru: # Danbooru configuration
   # Whether to authenticate when sending request to Danbooru, using anonymous mode is not recommend as anonymous
-  # user has more restrict API limits
+  # user has more restrict API limits.
   anonymous: true
   username: your-username
   apiKey: your-api-key
+  # Anonymous users can make 500 requests an hour. Basic members can make 3,000 requests an hour.
+  # Gold members can make 10,000 requests an hour. Platinum members can make 20,000 requests an hour.
+  hourRequestLimit: 500

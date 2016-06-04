@@ -10,10 +10,15 @@ import kotlin.system.exitProcess
 class AutoTagger(private val config: ConfigDto) {
     private lateinit var lockSocket: ServerSocket
 
+    private val danbooru = Danbooru(config.danbooru)
+
     init {
         if (config.singleInstance.enabled) {
             checkIfRunning();
         }
+
+        if (danbooru.isAuthorized() == false) throw IllegalStateException("Failed to authorize to Danbooru using provided credentials: ${config.danbooru.username}")
+        log("Danbooru authorization OK")
     }
 
     fun synchronizeTags() {

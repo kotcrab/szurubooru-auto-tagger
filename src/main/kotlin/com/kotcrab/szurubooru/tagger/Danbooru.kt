@@ -1,11 +1,13 @@
 package com.kotcrab.szurubooru.tagger
 
+import com.github.salomonbrys.kotson.array
 import com.github.salomonbrys.kotson.get
 import com.github.salomonbrys.kotson.int
 import com.github.salomonbrys.kotson.string
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import org.apache.commons.codec.binary.Base64
+import org.jsoup.HttpStatusException
 import org.jsoup.Jsoup
 
 /**
@@ -29,8 +31,23 @@ class Danbooru(private val config: DanbooruDto) {
         }
     }
 
+    fun isAuthorized(): Boolean {
+        if (config.anonymous) {
+            return true;
+        }
+
+        try {
+            getPost(2079472) //perform simple request
+        } catch(e: HttpStatusException) {
+            if (e.statusCode == 401) return false;
+            throw e;
+        }
+
+        return true;
+    }
+
     fun getTag(name: String): Tag {
-        val searchResult = request("tags.json?search[name_matches]=$name").asJsonArray
+        val searchResult = request("tags.json?search[name_matches]=$name").array
         if (searchResult.size() == 0) throw IllegalStateException("Query did not match any tag");
         if (searchResult.size() > 1) throw IllegalStateException("Query matched more than one tag")
         return Tag(
@@ -44,7 +61,7 @@ class Danbooru(private val config: DanbooruDto) {
     }
 
     private fun request(requestUrl: String): JsonElement {
-        val request = Jsoup.connect("$URL$requestUrl").ignoreContentType(true)
+        val request = Jsoup.connect("$URL$requestUrl").validateTLSCertificates(false).ignoreContentType(true)
         if (config.anonymous == false)
             request.header("Authorization", "Basic " + basicHttpAuth)
         val json = request.execute().body();
@@ -73,8 +90,8 @@ class Danbooru(private val config: DanbooruDto) {
                     .filterIndexed { index, s -> index % 2 == 0 }; //after each tag numeric value is stored which is not needed  }
         }
 
-        val aliases by lazy { aliasesJson.asJsonArray.map { it["antecedent_name"].string } }
-        val implications by lazy { implicationsJson.asJsonArray.map { it["consequent_name"].string } }
+        val aliases by lazy { aliasesJson.array.map { it["antecedent_name"].string } }
+        val implications by lazy { implicationsJson.array.map { it["consequent_name"].string } }
     }
 
     enum class TagCategory(val danbooruId: Int) {
