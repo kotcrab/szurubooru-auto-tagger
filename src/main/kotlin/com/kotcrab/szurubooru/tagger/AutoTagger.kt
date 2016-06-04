@@ -10,15 +10,19 @@ import kotlin.system.exitProcess
 class AutoTagger(private val config: ConfigDto) {
     private lateinit var lockSocket: ServerSocket
 
-    private val danbooru = Danbooru(config.danbooru)
+    val danbooru = Danbooru(config.danbooru)
+    val szurubooru = Szurubooru(config.szurubooru)
 
     init {
         if (config.singleInstance.enabled) {
             checkIfRunning();
         }
 
+        if (szurubooru.isHostReachable() == false) throw IllegalStateException("Can't to connect to Szurubooru using URL: ${config.szurubooru.apiPath}")
+        if (szurubooru.isAuthorized() == false) throw IllegalStateException("Failed to authorize to Szurubooru using provided credentials: ${config.szurubooru.username}")
+        log("Szurubooru connectivity OK")
         if (danbooru.isAuthorized() == false) throw IllegalStateException("Failed to authorize to Danbooru using provided credentials: ${config.danbooru.username}")
-        log("Danbooru authorization OK")
+        log("Danbooru connectivity OK")
     }
 
     fun synchronizeTags() {

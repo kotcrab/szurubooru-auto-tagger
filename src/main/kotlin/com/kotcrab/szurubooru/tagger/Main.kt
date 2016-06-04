@@ -26,7 +26,7 @@ fun main(args: Array<String>) {
     }
 
     log("Szurubooru auto tagger")
-    log("Loading config from $path.")
+    log("Using config from $path")
 
     val autoTagger = AutoTagger(loadConfig(path))
     autoTagger.synchronizeTags()
