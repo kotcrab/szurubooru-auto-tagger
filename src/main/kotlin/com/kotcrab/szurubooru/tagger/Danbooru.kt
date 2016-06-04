@@ -39,7 +39,7 @@ class Danbooru(private val config: DanbooruDto) {
         try {
             getPost(2079472) //perform simple request
         } catch(e: HttpStatusException) {
-            if (e.statusCode == 401) return false;
+            if (intArrayOf(401, 403, 404).contains(e.statusCode)) return false;
             throw e;
         }
 

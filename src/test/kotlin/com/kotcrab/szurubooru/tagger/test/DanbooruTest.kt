@@ -6,6 +6,7 @@ import org.junit.Assert.*
 import org.junit.Test
 
 /**
+ * Danbooru integration test. This test has to assume that example resources used for testing won't change.
  * @author Kotcrab
  */
 class DanbooruTest {
