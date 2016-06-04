@@ -63,7 +63,7 @@ class Danbooru(private val config: DanbooruDto) {
     private fun request(requestUrl: String): JsonElement {
         val request = Jsoup.connect("$URL$requestUrl").validateTLSCertificates(false).ignoreContentType(true)
         if (config.anonymous == false)
-            request.header("Authorization", "Basic " + basicHttpAuth)
+            request.header("Authorization", "Basic $basicHttpAuth")
         val json = request.execute().body();
         return jsonParser.parse(json);
     }

@@ -48,7 +48,7 @@ class Szurubooru(private val config: SzurubooruDto) {
 
     private fun request(requestUrl: String): JsonElement {
         val request = Jsoup.connect("${config.apiPath}$requestUrl").validateTLSCertificates(false).ignoreContentType(true)
-        request.header("Authorization", "Basic " + basicHttpAuth)
+        request.header("Authorization", "Basic $basicHttpAuth")
         val json = request.execute().body();
         return jsonParser.parse(json);
     }
