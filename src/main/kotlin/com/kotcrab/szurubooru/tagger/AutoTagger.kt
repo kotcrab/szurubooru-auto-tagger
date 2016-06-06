@@ -29,7 +29,11 @@ class AutoTagger(private val config: ConfigDto) {
     }
 
     fun synchronizeTags() {
-
+        val newPosts = szurubooru.listAllPosts(config.triggerTag)
+        log("There are ${newPosts.size} posts that needs to be tagged")
+        val managedPosts = szurubooru.listAllPosts(config.managedTag)
+        log("There are ${managedPosts.size} posts that are managed by tagger")
+        //check post.type == "image"
     }
 
     fun dispose() {

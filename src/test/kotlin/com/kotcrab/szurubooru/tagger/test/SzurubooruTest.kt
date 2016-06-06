@@ -49,6 +49,17 @@ class SzurubooruTest {
         Szurubooru(getLocalDto()).getTagCategories()
     }
 
+    @Test
+    @Ignore
+    fun batchUpload() {
+//      Szurubooru(getLocalDto()).post("post/2/").ignoreHttpErrors(true).method(Connection.Method.DELETE).execute().body()
+//        val szuru = Szurubooru(getLocalDto())
+//        File("""C:\Users\Kotcrab\Desktop\boorutest""").listFiles().forEach {
+//            println("Upload ${it.name}")
+//            szuru.uploadFile(it, Szurubooru.Safety.Safe, "auto_tagme")
+//        }
+    }
+
     private fun getLocalDto(): SzurubooruDto {
         val dto = SzurubooruDto();
         dto.apiPath = "http://192.168.73.132/api/"

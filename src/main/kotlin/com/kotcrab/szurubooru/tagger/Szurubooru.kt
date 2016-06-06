@@ -11,6 +11,7 @@ import org.jsoup.Jsoup
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
+import java.util.*
 
 /**
  * Szurubooru client.
@@ -62,6 +63,21 @@ class Szurubooru(private val config: SzurubooruDto) {
                 .post()
     }
 
+    fun listAllPosts(query: String): List<Post> {
+        var page = 1;
+        val posts = ArrayList<Post>()
+
+        while (true) {
+            val json = request("posts/?page=$page&pageSize=100&query=$query")
+            val postsJson = json["results"].asJsonArray
+            if (postsJson.size() == 0) break;
+            postsJson.forEach { posts.add(Post(it)) }
+            page++
+        }
+
+        return posts
+    }
+
     fun prepareRequest(requestUrl: String): Connection {
         val request = Jsoup.connect("${config.apiPath}$requestUrl").validateTLSCertificates(false).ignoreContentType(true)
         request.header("Authorization", "Basic $basicHttpAuth")
@@ -70,6 +86,10 @@ class Szurubooru(private val config: SzurubooruDto) {
 
     fun request(requestUrl: String): JsonElement {
         return jsonParser.parse(prepareRequest(requestUrl).execute().body());
+    }
+
+    class Post(val json: JsonElement) {
+
     }
 
     enum class Safety(val szurubooruName: String) {
