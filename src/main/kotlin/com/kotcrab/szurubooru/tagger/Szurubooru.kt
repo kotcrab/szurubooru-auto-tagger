@@ -1,13 +1,15 @@
 package com.kotcrab.szurubooru.tagger
 
-import com.github.salomonbrys.kotson.array
-import com.github.salomonbrys.kotson.get
-import com.github.salomonbrys.kotson.string
+import com.github.salomonbrys.kotson.*
 import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.apache.commons.codec.binary.Base64
+import org.jsoup.Connection
 import org.jsoup.HttpStatusException
 import org.jsoup.Jsoup
+import java.io.File
+import java.io.FileInputStream
 import java.io.IOException
 
 /**
@@ -46,10 +48,33 @@ class Szurubooru(private val config: SzurubooruDto) {
         return request("tag-categories?_fields=name")["results"].array.map { it["name"].string }
     }
 
-    private fun request(requestUrl: String): JsonElement {
+    fun uploadFile(file: File, safety: Safety, vararg tags: String) {
+        if (file.exists() == false) throw IllegalStateException("file does not exist")
+
+        val json: JsonObject = jsonObject(
+                "safety" to safety.szurubooruName,
+                "tags" to jsonArray(*tags)
+        )
+
+        prepareRequest("posts/").timeout(10 * 1000)
+                .data("metadata", json.toString())
+                .data("content", file.name, FileInputStream(File(file.absolutePath)))
+                .post()
+    }
+
+    fun prepareRequest(requestUrl: String): Connection {
         val request = Jsoup.connect("${config.apiPath}$requestUrl").validateTLSCertificates(false).ignoreContentType(true)
         request.header("Authorization", "Basic $basicHttpAuth")
-        val json = request.execute().body();
-        return jsonParser.parse(json);
+        return request;
+    }
+
+    fun request(requestUrl: String): JsonElement {
+        return jsonParser.parse(prepareRequest(requestUrl).execute().body());
+    }
+
+    enum class Safety(val szurubooruName: String) {
+        Unsafe("unsafe"),
+        Sketchy("sketchy"),
+        Safe("safe");
     }
 }
