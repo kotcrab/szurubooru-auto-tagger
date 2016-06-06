@@ -2,9 +2,11 @@
 # Don't modify this file, instead create `config.yaml` and override what you need.
 
 triggerTag: auto_tagme # Post with this tag will be automatically tagged.
-taggedTag: auto_tagged # Post managed by auto-tagger will have this tag.
-errorTag: auto_tagger_error # If some error occured post will be tagged with this tag.
+managedTag: auto_tagged # Post managed by auto-tagger will have this tag.
+errorTag: auto_tagger_error # If some error occurred post will be tagged with this tag - check log for more details
+noMatchTag: tagme # If post can't be found on IQDB it will be tagged with this tag
 
+checkBooruConnectivity: true # If enabled simple check will be performed to ensuere that auto tagger can connect to Szurubooru and Danbooru
 storeSourceUrl: true # Controls whether to store Danbooru URL in post source field on Szurubooru.
 updateImageRating: true # If true then post rating (safe, questionable, explicit) will be updated from Danbooru.
 

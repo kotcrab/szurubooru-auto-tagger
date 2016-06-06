@@ -36,8 +36,11 @@ class TagsDto {
 
 class ConfigDto {
     var triggerTag = "auto_tagme"
-    var taggedTag = "auto_tagged"
+    var managedTag = "auto_tagged"
     var errorTag = "auto_tagger_error"
+    var noMatchTag = "tagme"
+
+    var checkBooruConnectivity = true
     var storeSourceUrl = true
     var updateImageRating = true
 

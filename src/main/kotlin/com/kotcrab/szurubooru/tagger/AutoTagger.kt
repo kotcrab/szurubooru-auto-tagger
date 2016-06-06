@@ -18,11 +18,14 @@ class AutoTagger(private val config: ConfigDto) {
             checkIfRunning();
         }
 
-        if (szurubooru.isHostReachable() == false) throw IllegalStateException("Can't to connect to Szurubooru using URL: ${config.szurubooru.apiPath}")
-        if (szurubooru.isAuthorized() == false) throw IllegalStateException("Failed to authorize to Szurubooru using provided credentials: ${config.szurubooru.username}")
-        log("Szurubooru connectivity OK")
-        if (danbooru.isAuthorized() == false) throw IllegalStateException("Failed to authorize to Danbooru using provided credentials: ${config.danbooru.username}")
-        log("Danbooru connectivity OK")
+        if (config.checkBooruConnectivity) {
+            if (szurubooru.isHostReachable() == false) throw IllegalStateException("Can't to connect to Szurubooru using API URL: ${config.szurubooru.apiPath}")
+            if (szurubooru.isAuthorized() == false) throw IllegalStateException("Failed to authorize to Szurubooru using provided credentials: ${config.szurubooru.username}")
+            if (danbooru.isAuthorized() == false) throw IllegalStateException("Failed to authorize to Danbooru using provided credentials: ${config.danbooru.username}")
+            log("Booru connectivity looks ok")
+        } else {
+            log("Booru connectivity check skipped")
+        }
     }
 
     fun synchronizeTags() {
