@@ -2,7 +2,6 @@ package com.kotcrab.szurubooru.tagger
 
 import com.github.salomonbrys.kotson.*
 import com.google.gson.JsonElement
-import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.apache.commons.codec.binary.Base64
 import org.jsoup.Connection
@@ -18,11 +17,11 @@ import java.util.*
  * @author Kotcrab
  */
 class Szurubooru(private val config: SzurubooruDto) {
-    val jsonParser = JsonParser();
-    val basicHttpAuth: String;
+    private val jsonParser = JsonParser();
+    private val basicHttpAuth: String;
 
     init {
-        var login: String = "${config.username}:${config.password}";
+        val login: String = "${config.username}:${config.password}";
         basicHttpAuth = String(Base64.encodeBase64(login.toByteArray(charset = Charsets.US_ASCII)));
     }
 
@@ -52,15 +51,24 @@ class Szurubooru(private val config: SzurubooruDto) {
     fun uploadFile(file: File, safety: Safety, vararg tags: String) {
         if (file.exists() == false) throw IllegalStateException("file does not exist")
 
-        val json: JsonObject = jsonObject(
+        val json = jsonObject(
                 "safety" to safety.szurubooruName,
                 "tags" to jsonArray(*tags)
-        )
+        ).toString()
 
         prepareRequest("posts/").timeout(10 * 1000)
-                .data("metadata", json.toString())
+                .data("metadata", json)
                 .data("content", file.name, FileInputStream(File(file.absolutePath)))
                 .post()
+    }
+
+    fun updatePostTags(id: Int, vararg tags: String) {
+        val json = jsonObject(
+                "tags" to jsonArray(*tags)
+        ).toString()
+
+        prepareRequest("post/$id").method(Connection.Method.PUT)
+                .requestBody(json).execute()
     }
 
     fun listAllPosts(query: String): List<Post> {
@@ -89,7 +97,12 @@ class Szurubooru(private val config: SzurubooruDto) {
     }
 
     class Post(val json: JsonElement) {
+        val id by lazy { json["id"].asInt }
+        val contentUrl by lazy { json["contentUrl"].asString }
 
+        fun isImage(): Boolean {
+            return json["type"].asString == "image"
+        }
     }
 
     enum class Safety(val szurubooruName: String) {
