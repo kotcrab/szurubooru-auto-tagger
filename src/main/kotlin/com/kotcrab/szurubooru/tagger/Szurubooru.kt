@@ -58,7 +58,7 @@ class Szurubooru(private val config: SzurubooruDto) {
 
         prepareRequest("posts/").timeout(10 * 1000)
                 .data("metadata", json)
-                .data("content", file.name, FileInputStream(File(file.absolutePath)))
+                .data("content", file.name, FileInputStream(file))
                 .post()
     }
 

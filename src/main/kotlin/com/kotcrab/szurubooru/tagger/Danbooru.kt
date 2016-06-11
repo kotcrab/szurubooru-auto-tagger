@@ -19,8 +19,8 @@ class Danbooru(private val config: DanbooruDto) {
         val URL = "https://danbooru.donmai.us/"
     }
 
-    val jsonParser = JsonParser();
-    val basicHttpAuth: String;
+    private val jsonParser = JsonParser();
+    private val basicHttpAuth: String;
 
     init {
         if (config.anonymous == false) {

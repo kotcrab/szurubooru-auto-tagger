@@ -32,7 +32,7 @@ fun queryIqdb(file: File, services: EnumSet<IqdbServices> = EnumSet.of(IqdbServi
             .data("file", file.name, FileInputStream(file))
             .validateTLSCertificates(false);
     services.forEach { service -> connection.data("service[]", service.id.toString()) }
-    val document = connection.post();
+    val document = connection.timeout(30 * 1000).post();
     val bestMatchHeader = document.select("tr:contains(Best match)")
     if (bestMatchHeader.size == 0) return null;
     return bestMatchHeader.parents()[0].select("td.image > a").attr("href");
