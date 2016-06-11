@@ -45,7 +45,7 @@ class Szurubooru(private val config: SzurubooruDto) {
     }
 
     fun getTagCategories(): List<String> {
-        return request("tag-categories?_fields=name")["results"].array.map { it["name"].string }
+        return request("tag-categories?fields=name")["results"].array.map { it["name"].string }
     }
 
     fun uploadFile(file: File, safety: Safety, vararg tags: String) {
