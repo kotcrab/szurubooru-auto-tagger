@@ -99,6 +99,7 @@ class Szurubooru(private val config: SzurubooruDto) {
     class Post(val json: JsonElement) {
         val id by lazy { json["id"].asInt }
         val contentUrl by lazy { json["contentUrl"].asString }
+        val tags by lazy { json["tags"].asJsonArray.map { it.asString } }
 
         fun isImage(): Boolean {
             return json["type"].asString == "image"
