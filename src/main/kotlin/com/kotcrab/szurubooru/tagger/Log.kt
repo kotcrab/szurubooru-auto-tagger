@@ -5,3 +5,7 @@ package com.kotcrab.szurubooru.tagger
 fun log(message: Any?) {
     println(message);
 }
+
+fun logErr(message: Any?) {
+    println("Error: $message");
+}

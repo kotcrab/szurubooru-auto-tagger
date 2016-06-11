@@ -15,13 +15,13 @@ fun main(args: Array<String>) {
     } else if (args.size == 1) {
         path = args[0];
     } else {
-        println("Szurubooru auto tagger. Usage: <config-file-path>")
-        println("config-file-path: Path to configuration file. If not specified config.yaml is used or config.default.yaml if former does not exist.")
+        log("Szurubooru auto tagger. Usage: <config-file-path>")
+        log("config-file-path: Path to configuration file. If not specified config.yaml is used or config.default.yaml if former does not exist.")
         return;
     }
 
     if (File(path).exists() == false) {
-        println("Config file $path does not exist.")
+        log("Config file $path does not exist.")
         return;
     }
 
