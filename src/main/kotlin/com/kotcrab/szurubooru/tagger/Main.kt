@@ -7,22 +7,22 @@ import java.io.FileReader
 /** @author Kotcrab */
 
 fun main(args: Array<String>) {
-    var path: String;
+    var path: String
     if (args.size == 0) {
-        path = "config.yaml";
+        path = "config.yaml"
         if (File(path).exists() == false)
             path = "config.default.yaml"
     } else if (args.size == 1) {
-        path = args[0];
+        path = args[0]
     } else {
         log("Szurubooru auto tagger. Usage: <config-file-path>")
         log("config-file-path: Path to configuration file. If not specified config.yaml is used or config.default.yaml if former does not exist.")
-        return;
+        return
     }
 
     if (File(path).exists() == false) {
         log("Config file $path does not exist.")
-        return;
+        return
     }
 
     log("Szurubooru auto tagger")

@@ -9,8 +9,8 @@ import org.junit.Test
 internal class LoadConfigTest {
     @Test
     fun testLoadConfig() {
-        val config = loadConfig("config.default.yaml");
-        assertEquals(config.triggerTag, "auto_tagme");
+        val config = loadConfig("config.default.yaml")
+        assertEquals(config.triggerTag, "auto_tagme")
         assertNotNull(config.singleInstance)
         assertNotNull(config.danbooru)
         assertNotNull(config.szurubooru)

@@ -30,10 +30,10 @@ enum class IqdbServices(val id: Int) {
 fun queryIqdb(file: File, services: EnumSet<IqdbServices> = EnumSet.of(IqdbServices.Danbooru)): String? {
     val connection = Jsoup.connect("https://iqdb.org/")
             .data("file", file.name, FileInputStream(file))
-            .validateTLSCertificates(false);
+            .validateTLSCertificates(false)
     services.forEach { service -> connection.data("service[]", service.id.toString()) }
-    val document = connection.timeout(30 * 1000).post();
+    val document = connection.timeout(30 * 1000).post()
     val bestMatchHeader = document.select("tr:contains(Best match)")
-    if (bestMatchHeader.size == 0) return null;
-    return bestMatchHeader.parents()[0].select("td.image > a").attr("href");
+    if (bestMatchHeader.size == 0) return null
+    return bestMatchHeader.parents()[0].select("td.image > a").attr("href")
 }

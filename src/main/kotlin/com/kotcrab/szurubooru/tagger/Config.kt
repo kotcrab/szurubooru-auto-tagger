@@ -28,10 +28,10 @@ class SingleInstanceDto {
 class TagsDto {
     var obtainAliases = true
     var obtainSuggestions = true
-    var obtainImplications = false;
-    var ignoreTags: List<String> = ArrayList();
-    var remapTags: List<RemapDto> = ArrayList();
-    var remapCategories: List<RemapDto> = ArrayList();
+    var obtainImplications = false
+    var ignoreTags: List<String> = ArrayList()
+    var remapTags: List<RemapDto> = ArrayList()
+    var remapCategories: List<RemapDto> = ArrayList()
 }
 
 class ConfigDto {

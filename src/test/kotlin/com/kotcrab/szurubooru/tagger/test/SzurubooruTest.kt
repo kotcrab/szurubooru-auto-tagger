@@ -61,8 +61,8 @@ class SzurubooruTest {
     }
 
     private fun getLocalDto(): SzurubooruDto {
-        val dto = SzurubooruDto();
+        val dto = SzurubooruDto()
         dto.apiPath = "http://192.168.73.132/api/"
-        return dto;
+        return dto
     }
 }

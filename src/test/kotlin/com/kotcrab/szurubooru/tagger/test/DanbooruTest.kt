@@ -17,7 +17,7 @@ class DanbooruTest {
 
     @Test
     fun testGetPostTags() {
-        val post = Danbooru(DanbooruDto()).getPost(2376896);
+        val post = Danbooru(DanbooruDto()).getPost(2376896)
         assertTrue(post.characterTags.contains("caster_(fate/extra)"))
         assertTrue(post.generalTags.contains("fox_ears"))
         assertTrue(post.copyrightTags.contains("fate/extra"))
