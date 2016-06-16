@@ -47,9 +47,9 @@ class DanbooruTest {
     @Test
     fun testIdFromUrl() {
         val danbooru = Danbooru(DanbooruDto())
-        assertEquals(danbooru.idFromUrl("https://danbooru.donmai.us/posts/2376896/"), 2376896)
-        assertEquals(danbooru.idFromUrl("https://danbooru.donmai.us/posts/2376896"), 2376896)
-        assertEquals(danbooru.idFromUrl("danbooru.donmai.us/posts/2376896/"), 2376896)
-        assertEquals(danbooru.idFromUrl("danbooru.donmai.us/posts/2376896"), 2376896)
+        assertEquals(danbooru.postIdFromUrl("https://danbooru.donmai.us/posts/2376896/"), 2376896)
+        assertEquals(danbooru.postIdFromUrl("https://danbooru.donmai.us/posts/2376896"), 2376896)
+        assertEquals(danbooru.postIdFromUrl("danbooru.donmai.us/posts/2376896/"), 2376896)
+        assertEquals(danbooru.postIdFromUrl("danbooru.donmai.us/posts/2376896"), 2376896)
     }
 }

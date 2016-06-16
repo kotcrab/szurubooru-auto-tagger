@@ -48,7 +48,7 @@ class Danbooru(private val config: DanbooruDto) {
         return true
     }
 
-    private fun idFromUrl(url: String): Int {
+    fun postIdFromUrl(url: String): Int {
         val searchString = "danbooru.donmai.us/posts/"
         val beginIndex = url.indexOf(searchString) + searchString.length
         val endIndex = url.indexOf('/', beginIndex)
@@ -66,7 +66,7 @@ class Danbooru(private val config: DanbooruDto) {
     }
 
     fun getPost(url: String): Post {
-        return getPost(idFromUrl(url))
+        return getPost(postIdFromUrl(url))
     }
 
     fun getPost(id: Int): Post {
