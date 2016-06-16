@@ -48,7 +48,7 @@ class Danbooru(private val config: DanbooruDto) {
         return true
     }
 
-    fun idFromUrl(url: String): Int {
+    private fun idFromUrl(url: String): Int {
         val searchString = "danbooru.donmai.us/posts/"
         val beginIndex = url.indexOf(searchString) + searchString.length
         val endIndex = url.indexOf('/', beginIndex)
@@ -63,6 +63,10 @@ class Danbooru(private val config: DanbooruDto) {
                 searchResult.first(),
                 request("tag_aliases.json?search[name_matches]=$name"),
                 request("tag_implications.json?search[antecedent_name]=$name"))
+    }
+
+    fun getPost(url: String): Post {
+        return getPost(idFromUrl(url))
     }
 
     fun getPost(id: Int): Post {
@@ -81,8 +85,9 @@ class Danbooru(private val config: DanbooruDto) {
     class Post(val json: JsonElement) {
         val artistTags by lazy { getTags("tag_string_artist") }
         val generalTags by lazy { getTags("tag_string_general") }
-        val characterTags  by lazy { getTags("tag_string_character") }
-        val copyrightTags  by lazy { getTags("tag_string_copyright") }
+        val characterTags by lazy { getTags("tag_string_character") }
+        val copyrightTags by lazy { getTags("tag_string_copyright") }
+        val tags by lazy { getTags("tag_string") }
         val rating by lazy { Rating.fromDanbooruId(json["rating"].string) }
 
         private fun getTags(elementName: String): List<String> {
@@ -121,6 +126,14 @@ class Danbooru(private val config: DanbooruDto) {
         Explicit("e"),
         Questionable("q"),
         Safe("s");
+
+        fun toSzurubooruSafety(): Szurubooru.Safety {
+            when (this) {
+                Explicit -> return Szurubooru.Safety.Unsafe
+                Questionable -> return Szurubooru.Safety.Sketchy
+                Safe -> return Szurubooru.Safety.Safe
+            }
+        }
 
         companion object {
             fun fromDanbooruId(danbooruId: String): Rating {

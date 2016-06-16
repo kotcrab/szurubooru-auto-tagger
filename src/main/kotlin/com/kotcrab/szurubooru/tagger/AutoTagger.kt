@@ -49,11 +49,24 @@ class AutoTagger(private val config: ConfigDto) {
                 replacePostTriggerTag(post, config.noMatchTag)
                 return@forEach
             } else {
-                log("Post ${post.id} found match: " + sourceImageUrl)
+                log("Found post ${post.id} match: $sourceImageUrl")
                 if (config.storeSourceUrl) {
                     szurubooru.updatePostSource(post.id, sourceImageUrl)
                 }
             }
+
+            val danPost = danbooru.getPost(sourceImageUrl)
+            if (config.updateImageRating) {
+                szurubooru.updatePostSafety(post.id, danPost.rating.toSzurubooruSafety())
+                log("Updated post ${post.id} safety to ${danPost.rating}")
+            }
+
+            val newTags = danPost.tags
+                    .filterNot { config.tags.ignoreTags.contains(it) }
+                    .toMutableList()
+            newTags.add(config.managedTag)
+            szurubooru.updatePostTags(post.id, *newTags.toTypedArray())
+            log("Updated post ${post.id} tags")
 
             Thread.sleep(500)
         }
