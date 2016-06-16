@@ -19,36 +19,45 @@ class Danbooru(private val config: DanbooruDto) {
         val URL = "https://danbooru.donmai.us/"
     }
 
-    private val jsonParser = JsonParser();
-    private val basicHttpAuth: String;
+    private val jsonParser = JsonParser()
+    private val basicHttpAuth: String
+    var requestCounter = 0
+        private set
 
     init {
         if (config.anonymous == false) {
-            var login: String = "${config.username}:${config.apiKey}";
-            basicHttpAuth = String(Base64.encodeBase64(login.toByteArray(charset = Charsets.US_ASCII)));
+            val login: String = "${config.username}:${config.apiKey}"
+            basicHttpAuth = String(Base64.encodeBase64(login.toByteArray(charset = Charsets.US_ASCII)))
         } else {
-            basicHttpAuth = "";
+            basicHttpAuth = ""
         }
     }
 
     fun isAuthorized(): Boolean {
         if (config.anonymous) {
-            return true;
+            return true
         }
 
         try {
             getPost(2079472) //perform simple request
         } catch(e: HttpStatusException) {
-            if (intArrayOf(401, 403, 404).contains(e.statusCode)) return false;
-            throw e;
+            if (intArrayOf(401, 403, 404).contains(e.statusCode)) return false
+            throw e
         }
 
-        return true;
+        return true
+    }
+
+    fun idFromUrl(url: String): Int {
+        val searchString = "danbooru.donmai.us/posts/"
+        val beginIndex = url.indexOf(searchString) + searchString.length
+        val endIndex = url.indexOf('/', beginIndex)
+        return url.substring(beginIndex, if (endIndex == -1) url.length else endIndex).toInt()
     }
 
     fun getTag(name: String): Tag {
         val searchResult = request("tags.json?search[name_matches]=$name").array
-        if (searchResult.size() == 0) throw IllegalStateException("Query did not match any tag");
+        if (searchResult.size() == 0) throw IllegalStateException("Query did not match any tag")
         if (searchResult.size() > 1) throw IllegalStateException("Query matched more than one tag")
         return Tag(
                 searchResult.first(),
@@ -57,15 +66,16 @@ class Danbooru(private val config: DanbooruDto) {
     }
 
     fun getPost(id: Int): Post {
-        return Post(request("posts/$id.json"));
+        return Post(request("posts/$id.json"))
     }
 
     private fun request(requestUrl: String): JsonElement {
         val request = Jsoup.connect("$URL$requestUrl").validateTLSCertificates(false).ignoreContentType(true)
         if (config.anonymous == false)
             request.header("Authorization", "Basic $basicHttpAuth")
-        val json = request.execute().body();
-        return jsonParser.parse(json);
+        requestCounter += 1
+        val json = request.execute().body()
+        return jsonParser.parse(json)
     }
 
     class Post(val json: JsonElement) {
@@ -87,7 +97,7 @@ class Danbooru(private val config: DanbooruDto) {
         val relatedTags by lazy {
             json["related_tags"].string.split(" ")
                     .drop(2) //first two elements are *this* tag and '1'
-                    .filterIndexed { index, s -> index % 2 == 0 }; //after each tag numeric value is stored which is not needed  }
+                    .filterIndexed { index, s -> index % 2 == 0 } //after each tag numeric value is stored which is not needed
         }
 
         val aliases by lazy { aliasesJson.array.map { it["antecedent_name"].string } }

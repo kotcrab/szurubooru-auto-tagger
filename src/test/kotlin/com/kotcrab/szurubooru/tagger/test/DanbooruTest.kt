@@ -39,4 +39,14 @@ class DanbooruTest {
         assertNotEquals(tag.relatedTags[1], "1")
         assertTrue(tag.relatedTags.contains("animal_ears")) //this is unlikely to change but it's possible
     }
+
+
+    @Test
+    fun testIdFromUrl() {
+        val danbooru = Danbooru(DanbooruDto())
+        assertEquals(danbooru.idFromUrl("https://danbooru.donmai.us/posts/2376896/"), 2376896)
+        assertEquals(danbooru.idFromUrl("https://danbooru.donmai.us/posts/2376896"), 2376896)
+        assertEquals(danbooru.idFromUrl("danbooru.donmai.us/posts/2376896/"), 2376896)
+        assertEquals(danbooru.idFromUrl("danbooru.donmai.us/posts/2376896"), 2376896)
+    }
 }
