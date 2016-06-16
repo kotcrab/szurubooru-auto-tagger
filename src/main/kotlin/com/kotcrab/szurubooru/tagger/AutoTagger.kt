@@ -1,6 +1,5 @@
 package com.kotcrab.szurubooru.tagger
 
-import org.jsoup.Jsoup
 import java.io.IOException
 import java.net.BindException
 import java.net.InetAddress
@@ -16,7 +15,7 @@ class AutoTagger(private val config: ConfigDto) {
 
     init {
         if (config.singleInstance.enabled) {
-            checkIfRunning();
+            checkIfRunning()
         }
 
         if (config.checkBooruConnectivity) {
@@ -35,32 +34,36 @@ class AutoTagger(private val config: ConfigDto) {
 //      val managedPosts = szurubooru.listAllPosts(config.managedTag)
 //      log("There are ${managedPosts.size} posts that are managed by tagger")
 
-        newPosts.forEach {
-            if (it.isImage() == false) {
-                logErr("Post ${it.id} is not an image.");
-                szurubooru.updatePostTags(it.id, config.errorTag)
+        newPosts.forEach { post ->
+            if (post.isImage() == false) {
+                logErr("Post ${post.id} is not an image.")
+                replacePostTriggerTag(post, config.errorTag)
                 return@forEach
             }
 
-            log("Searching IQDB match for post ${it.id}...");
-            val imageFile = createTempFile()
-            imageFile.writeBytes(Jsoup.connect(it.contentUrl).timeout(30 * 1000)
-                    .ignoreContentType(true).execute().bodyAsBytes())
-            val sourceImageUrl = queryIqdb(imageFile);
-            imageFile.delete()
+            log("Searching IQDB match for post ${post.id}...")
+            val sourceImageUrl = szurubooru.searchPostOnIqdb(post)
 
             if (sourceImageUrl == null) {
-                log("Post ${it.id} not found in the IQDB datebase.");
-                val newTagsList = it.tags.toMutableList()
-                newTagsList.remove(config.triggerTag)
-                newTagsList.add(config.noMatchTag)
-                szurubooru.updatePostTags(it.id, *newTagsList.toTypedArray())
+                log("Post ${post.id} not found in the IQDB datebase.")
+                replacePostTriggerTag(post, config.noMatchTag)
+                return@forEach
             } else {
-                log("Post ${it.id} found match: " + sourceImageUrl);
+                log("Post ${post.id} found match: " + sourceImageUrl)
+                if (config.storeSourceUrl) {
+                    szurubooru.updatePostSource(post.id, sourceImageUrl)
+                }
             }
 
             Thread.sleep(500)
         }
+    }
+
+    private fun replacePostTriggerTag(post: Szurubooru.Post, newTag: String) {
+        val newTagsList = post.tags.toMutableList()
+        newTagsList.remove(config.triggerTag)
+        newTagsList.add(newTag)
+        szurubooru.updatePostTags(post.id, *newTagsList.toTypedArray())
     }
 
     fun dispose() {
@@ -74,10 +77,10 @@ class AutoTagger(private val config: ConfigDto) {
             lockSocket = ServerSocket(config.singleInstance.port, 0, InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1)))
         } catch (e: BindException) {
             logErr("Another instance is already running or port ${config.singleInstance.port} is being used by other application.")
-            exitProcess(1);
+            exitProcess(1)
         } catch (e: IOException) {
             e.printStackTrace()
-            exitProcess(2);
+            exitProcess(2)
         }
     }
 }
