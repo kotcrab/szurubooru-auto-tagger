@@ -23,6 +23,8 @@ class Szurubooru(private val config: SzurubooruDto) {
     init {
         val login: String = "${config.username}:${config.password}"
         basicHttpAuth = String(Base64.encodeBase64(login.toByteArray(charset = Charsets.US_ASCII)))
+        if (config.apiPath.endsWith("/") == false) config.apiPath += "/"
+        if (config.dataPath.endsWith("/") == false) config.dataPath += "/"
     }
 
     fun isHostReachable(): Boolean {
