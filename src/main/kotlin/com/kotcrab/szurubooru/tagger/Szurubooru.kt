@@ -51,16 +51,16 @@ class Szurubooru(private val config: SzurubooruDto) {
     }
 
     fun getTags(): List<String> {
-        val json = Jsoup.connect("${config.dataPath}tags.json").validateTLSCertificates(false).ignoreContentType(true).execute().body();
-        val list = jsonParser.parse(json)["tags"].asJsonArray.flatMap {
-            it["names"].asJsonArray.map { it.asString }
+        val json = Jsoup.connect("${config.dataPath}tags.json").validateTLSCertificates(false).ignoreContentType(true).execute().body()
+        val list = jsonParser.parse(json)["tags"].array.flatMap {
+            it["names"].array.map { it.string }
         }
         return list
     }
 
-    fun esacpeTagName(name: String): String {
-        var escapedName = ""
-        arrayOf(':', '_', '[', ']', '/', '\\').forEach { escapedName = name.replace(it, '_') }
+    fun escapeTagName(name: String): String {
+        var escapedName = name
+        arrayOf(':', '_', '[', ']', '/', '\\', ' ').forEach { escapedName = escapedName.replace(it, '_') }
         return escapedName
     }
 
@@ -109,6 +109,19 @@ class Szurubooru(private val config: SzurubooruDto) {
         updatePostData(id, json)
     }
 
+    fun updateTag(name: String, category: String, aliases: List<String>, implications: List<String>, suggestions: List<String>) {
+        val jsonObj = jsonObject(
+                "name" to jsonArray(name, *aliases.minus(name).toTypedArray()),
+                "category" to category
+        )
+
+        if (implications.size != 0) jsonObj += "implications" to jsonArray(*implications.minus(name).toTypedArray())
+        if (suggestions.size != 0) jsonObj += "suggestions" to jsonArray(*suggestions.minus(name).toTypedArray())
+
+        prepareRequest("tag/$name").method(Connection.Method.PUT)
+                .requestBody(jsonObj.toString()).execute()
+    }
+
     private fun updatePostData(id: Int, json: String) {
         prepareRequest("post/$id").method(Connection.Method.PUT)
                 .requestBody(json).execute()
@@ -120,7 +133,7 @@ class Szurubooru(private val config: SzurubooruDto) {
 
         while (true) {
             val json = request("posts/?page=$page&pageSize=100&query=$query")
-            val postsJson = json["results"].asJsonArray
+            val postsJson = json["results"].array
             if (postsJson.size() == 0) break
             postsJson.forEach { posts.add(Post(it)) }
             page++
@@ -140,13 +153,13 @@ class Szurubooru(private val config: SzurubooruDto) {
     }
 
     class Post(val json: JsonElement) {
-        val id by lazy { json["id"].asInt }
-        val contentUrl by lazy { json["contentUrl"].asString }
-        val tags by lazy { json["tags"].asJsonArray.map { it.asString } }
-        val safety by lazy { Safety.fromSzurubooruId(json["safety"].asString) }
+        val id by lazy { json["id"].int }
+        val contentUrl by lazy { json["contentUrl"].string }
+        val tags by lazy { json["tags"].array.map { it.string } }
+        val safety by lazy { Safety.fromSzurubooruId(json["safety"].string) }
 
         fun isImage(): Boolean {
-            return json["type"].asString == "image"
+            return json["type"].string == "image"
         }
     }
 

@@ -1,4 +1,4 @@
-package com.kotcrab.szurubooru.tagger;
+package com.kotcrab.szurubooru.tagger
 
 import java.util.*
 
@@ -15,8 +15,8 @@ class DanbooruDto {
 }
 
 class SzurubooruDto {
-    var apiPath = "https://szurubooru.local/api/"
-    var dataPath = "https://szurubooru.local/data/"
+    var apiPath = "http://szurubooru.local/api/"
+    var dataPath = "http://szurubooru.local/data/"
     var username = "auto-tagger"
     var password = "auto-tagger"
 }
@@ -28,8 +28,8 @@ class SingleInstanceDto {
 
 class TagsDto {
     var obtainAliases = true
-    var obtainSuggestions = true
-    var obtainImplications = false
+    var obtainSuggestions = false
+    var obtainImplications = true
     var ignoreTags: List<String> = ArrayList()
     var remapTags: List<RemapDto> = ArrayList()
     var remapCategories: List<RemapDto> = ArrayList()

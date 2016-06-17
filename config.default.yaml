@@ -19,7 +19,7 @@ singleInstance: # Ensures that only single instance of auto tagger is running.
 tags:
   # If true then additional information about tags such as aliases, suggestions or implications will be retrieved from Danbooru.
   obtainAliases: true
-  obtainSuggestions: true
+  obtainSuggestions: false # Enabling not recomened, will create many unused tags
   obtainImplications: true
   # Warning: Tags under `ignoreTags` and `remapTags` must be entered as visible on Danbooru. Auto tagger might perform tag name escaping
   # but removing ignored tags and remaping them is peroformed before escaping.

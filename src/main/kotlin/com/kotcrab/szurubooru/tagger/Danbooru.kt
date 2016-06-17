@@ -57,7 +57,7 @@ class Danbooru(private val config: DanbooruDto) {
 
     fun getTag(name: String): Tag {
         val searchResult = request("tags.json?search[name_matches]=$name").array
-        if (searchResult.size() == 0) throw IllegalStateException("Query did not match any tag")
+        if (searchResult.size() == 0) throw IllegalStateException("Query did not match any tag: $name")
         if (searchResult.size() > 1) throw IllegalStateException("Query matched more than one tag")
         return Tag(
                 searchResult.first(),
@@ -109,16 +109,20 @@ class Danbooru(private val config: DanbooruDto) {
         val implications by lazy { implicationsJson.array.map { it["consequent_name"].string } }
     }
 
-    enum class TagCategory(val danbooruId: Int) {
-        General(0),
-        Artist(1),
-        Copyright(3),
-        Character(4);
+    enum class TagCategory(val danbooruId: Int, val remapName: String) {
+        General(0, "general"),
+        Artist(1, "artist"),
+        Copyright(3, "copyright"),
+        Character(4, "character");
 
         companion object {
             fun fromDanbooruId(danbooruId: Int): TagCategory {
                 return values().first { it.danbooruId == danbooruId }
             }
+        }
+
+        override fun toString(): String {
+            return this.remapName
         }
     }
 

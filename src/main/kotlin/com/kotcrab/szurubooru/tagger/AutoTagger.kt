@@ -15,6 +15,7 @@ class AutoTagger(private val config: ConfigDto) {
     val szurubooru = Szurubooru(config.szurubooru)
 
     lateinit var szuruTags: List<String>
+    lateinit var szuruTagCategories: List<String>
 
     init {
         if (config.singleInstance.enabled) {
@@ -32,10 +33,11 @@ class AutoTagger(private val config: ConfigDto) {
 
         log("Obtaining tags.json...")
         szuruTags = szurubooru.getTags()
+        szuruTagCategories = szurubooru.getTagCategories()
     }
 
     fun synchronizeTags() {
-        val newTags = ArrayList<String>();
+        val createdTags = ArrayList<EscapedTag>()
         val newPosts = szurubooru.listAllPosts(config.triggerTag)
         log("There are ${newPosts.size} posts that needs to be tagged")
 
@@ -43,6 +45,8 @@ class AutoTagger(private val config: ConfigDto) {
 //      log("There are ${managedPosts.size} posts that are managed by tagger")
 
         newPosts.forEachIndexed { i, post ->
+//            if (i > 3) return@forEachIndexed //TODO DEBUG ONLY
+
             if (post.isImage() == false) {
                 logErr("Post ${post.id} is not an image.")
                 replacePostTriggerTag(post, config.errorTag)
@@ -59,24 +63,27 @@ class AutoTagger(private val config: ConfigDto) {
             }
 
             //TODO: Add regex name check
-            val newPostTags = danPost.tags
-                    .filterNot({ config.tags.ignoreTags.contains(it) })
-                    .map { remapTag(it) }
-                    .map { szurubooru.esacpeTagName(it) }
+            val newPostTags = toSzuruTags(danPost.tags)
+            newPostTags.forEach {
+                val escapedTag = szurubooru.escapeTagName(it)
+                if (szuruTags.contains(escapedTag) == false) createdTags.add(EscapedTag(it, escapedTag))
+            }
 
-            newPostTags.forEach { if (szuruTags.contains(it) == false) newTags.add(it) }
-
-            szurubooru.updatePostTags(post.id, *newPostTags.plus(config.managedTag).toTypedArray())
-            log("Updated post ${post.id} tags. Completed $i/${newPosts.size}.")
+            szurubooru.updatePostTags(post.id, *escapeTags(newPostTags).plus(config.managedTag).toTypedArray())
+            log("Updated post ${post.id} tags. Completed ${i + 1}/${newPosts.size}.")
 
             Thread.sleep(500)
         }
 
-        log("There are ${newTags.size} new tags that needs to be updated")
-        newTags.forEach {
-
+        log("There are ${createdTags.size} new tags that needs to be updated")
+        createdTags.forEachIndexed { i, tag ->
+            val danTag = danbooru.getTag(tag.danbooruTag)
+            szurubooru.updateTag(tag.escapedTag, remapTagCategroy(danTag.category.remapName),
+                    if (config.tags.obtainAliases) toEscapedSzuruTags(danTag.aliases) else emptyList<String>(),
+                    if (config.tags.obtainImplications) toEscapedSzuruTags(danTag.implications) else emptyList<String>(),
+                    if (config.tags.obtainSuggestions) toEscapedSzuruTags(danTag.relatedTags) else emptyList<String>())
+            log("Updated tag ${tag.danbooruTag}. Completed ${i + 1}/${createdTags.size}.")
         }
-
     }
 
     private fun searchPostOnIqdb(post: Szurubooru.Post): String? {
@@ -97,12 +104,32 @@ class AutoTagger(private val config: ConfigDto) {
         return sourceImageUrl
     }
 
-    fun remapTag(tag: String): String {
+    private fun toSzuruTags(tags: List<String>): List<String> {
+        return tags
+                .filterNot({ config.tags.ignoreTags.contains(it) })
+                .map { remapTag(it) }
+    }
+
+    private fun toEscapedSzuruTags(tags: List<String>): List<String> {
+        return escapeTags(toSzuruTags(tags))
+    }
+
+    private fun escapeTags(tags: List<String>): List<String> = tags.map { szurubooru.escapeTagName(it) }
+
+    private fun remapTag(tag: String): String {
         config.tags.remapTags.forEach { remap: RemapDto ->
-            if (remap.from.equals(tag)) return remap.to;
+            if (remap.from.equals(tag)) return remap.to
         }
 
         return tag
+    }
+
+    private fun remapTagCategroy(category: String): String {
+        config.tags.remapCategories.forEach { remap: RemapDto ->
+            if (remap.from.equals(category)) return remap.to
+        }
+
+        return category
     }
 
     private fun replacePostTriggerTag(post: Szurubooru.Post, newTag: String) {
@@ -127,4 +154,6 @@ class AutoTagger(private val config: ConfigDto) {
             exitProcess(2)
         }
     }
+
+    private class EscapedTag(val danbooruTag: String, val escapedTag: String)
 }
