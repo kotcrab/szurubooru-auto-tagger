@@ -21,6 +21,8 @@ tags:
   obtainAliases: true
   obtainSuggestions: true
   obtainImplications: true
+  # Warning: Tags under `ignoreTags` and `remapTags` must be entered as visible on Danbooru. Auto tagger might perform tag name escaping
+  # but removing ignored tags and remaping them is peroformed before escaping.
 #  ignoreTags:
 #    - test # Tag test will be ignored
 #    - foo

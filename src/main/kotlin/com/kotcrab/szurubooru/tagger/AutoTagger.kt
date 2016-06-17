@@ -4,6 +4,7 @@ import java.io.IOException
 import java.net.BindException
 import java.net.InetAddress
 import java.net.ServerSocket
+import java.util.*
 import kotlin.system.exitProcess
 
 /** @author Kotcrab */
@@ -12,6 +13,8 @@ class AutoTagger(private val config: ConfigDto) {
 
     val danbooru = Danbooru(config.danbooru)
     val szurubooru = Szurubooru(config.szurubooru)
+
+    lateinit var szuruTags: List<String>
 
     init {
         if (config.singleInstance.enabled) {
@@ -26,11 +29,16 @@ class AutoTagger(private val config: ConfigDto) {
         } else {
             log("Booru connectivity check skipped")
         }
+
+        log("Obtaining tags.json...")
+        szuruTags = szurubooru.getTags()
     }
 
     fun synchronizeTags() {
+        val newTags = ArrayList<String>();
         val newPosts = szurubooru.listAllPosts(config.triggerTag)
         log("There are ${newPosts.size} posts that needs to be tagged")
+
 //      val managedPosts = szurubooru.listAllPosts(config.managedTag)
 //      log("There are ${managedPosts.size} posts that are managed by tagger")
 
@@ -41,20 +49,8 @@ class AutoTagger(private val config: ConfigDto) {
                 return@forEachIndexed
             }
 
-            log("Searching IQDB match for post ${post.id}...")
-            val sourceImageUrl = szurubooru.searchPostOnIqdb(post)
-
-            if (sourceImageUrl == null) {
-                log("Post ${post.id} not found in the IQDB datebase.")
-                replacePostTriggerTag(post, config.noMatchTag)
-                return@forEachIndexed
-            } else {
-                log("Found post ${post.id} match: $sourceImageUrl")
-                if (config.storeSourceUrl) {
-                    szurubooru.updatePostSource(post.id, sourceImageUrl)
-                    log("Updated post ${post.id} source")
-                }
-            }
+            val sourceImageUrl = searchPostOnIqdb(post)
+            sourceImageUrl ?: return@forEachIndexed
 
             val danPost = danbooru.getPost(sourceImageUrl)
             if (config.updateImageRating) {
@@ -63,15 +59,50 @@ class AutoTagger(private val config: ConfigDto) {
             }
 
             //TODO: Add regex name check
-            val newTags = danPost.tags
+            val newPostTags = danPost.tags
                     .filterNot({ config.tags.ignoreTags.contains(it) })
+                    .map { remapTag(it) }
                     .map { szurubooru.esacpeTagName(it) }
-                    .plus(config.managedTag)
-            szurubooru.updatePostTags(post.id, *newTags.toTypedArray())
+
+            newPostTags.forEach { if (szuruTags.contains(it) == false) newTags.add(it) }
+
+            szurubooru.updatePostTags(post.id, *newPostTags.plus(config.managedTag).toTypedArray())
             log("Updated post ${post.id} tags. Completed $i/${newPosts.size}.")
 
             Thread.sleep(500)
         }
+
+        log("There are ${newTags.size} new tags that needs to be updated")
+        newTags.forEach {
+
+        }
+
+    }
+
+    private fun searchPostOnIqdb(post: Szurubooru.Post): String? {
+        log("Searching IQDB match for post ${post.id}...")
+        val sourceImageUrl = szurubooru.searchPostOnIqdb(post)
+
+        if (sourceImageUrl == null) {
+            log("Post ${post.id} not found in the IQDB datebase.")
+            replacePostTriggerTag(post, config.noMatchTag)
+        } else {
+            log("Found post ${post.id} match: $sourceImageUrl")
+            if (config.storeSourceUrl) {
+                szurubooru.updatePostSource(post.id, sourceImageUrl)
+                log("Updated post ${post.id} source")
+            }
+        }
+
+        return sourceImageUrl
+    }
+
+    fun remapTag(tag: String): String {
+        config.tags.remapTags.forEach { remap: RemapDto ->
+            if (remap.from.equals(tag)) return remap.to;
+        }
+
+        return tag
     }
 
     private fun replacePostTriggerTag(post: Szurubooru.Post, newTag: String) {
