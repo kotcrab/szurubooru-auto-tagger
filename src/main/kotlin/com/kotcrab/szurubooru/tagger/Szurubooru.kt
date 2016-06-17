@@ -55,6 +55,13 @@ class Szurubooru(private val config: SzurubooruDto) {
         }
         return list
     }
+
+    fun esacpeTagName(name: String): String {
+        var escapedName = ""
+        arrayOf(':', '_', '[', ']', '/', '\\').forEach { escapedName = name.replace(it, '_') }
+        return escapedName
+    }
+
     fun uploadFile(file: File, safety: Safety, vararg tags: String) {
         if (file.exists() == false) throw IllegalStateException("file does not exist")
 

@@ -34,11 +34,11 @@ class AutoTagger(private val config: ConfigDto) {
 //      val managedPosts = szurubooru.listAllPosts(config.managedTag)
 //      log("There are ${managedPosts.size} posts that are managed by tagger")
 
-        newPosts.forEach { post ->
+        newPosts.forEachIndexed { i, post ->
             if (post.isImage() == false) {
                 logErr("Post ${post.id} is not an image.")
                 replacePostTriggerTag(post, config.errorTag)
-                return@forEach
+                return@forEachIndexed
             }
 
             log("Searching IQDB match for post ${post.id}...")
@@ -47,11 +47,12 @@ class AutoTagger(private val config: ConfigDto) {
             if (sourceImageUrl == null) {
                 log("Post ${post.id} not found in the IQDB datebase.")
                 replacePostTriggerTag(post, config.noMatchTag)
-                return@forEach
+                return@forEachIndexed
             } else {
                 log("Found post ${post.id} match: $sourceImageUrl")
                 if (config.storeSourceUrl) {
                     szurubooru.updatePostSource(post.id, sourceImageUrl)
+                    log("Updated post ${post.id} source")
                 }
             }
 
@@ -61,21 +62,20 @@ class AutoTagger(private val config: ConfigDto) {
                 log("Updated post ${post.id} safety to ${danPost.rating}")
             }
 
+            //TODO: Add regex name check
             val newTags = danPost.tags
-                    .filterNot { config.tags.ignoreTags.contains(it) }
-                    .toMutableList()
-            newTags.add(config.managedTag)
+                    .filterNot({ config.tags.ignoreTags.contains(it) })
+                    .map { szurubooru.esacpeTagName(it) }
+                    .plus(config.managedTag)
             szurubooru.updatePostTags(post.id, *newTags.toTypedArray())
-            log("Updated post ${post.id} tags")
+            log("Updated post ${post.id} tags. Completed $i/${newPosts.size}.")
 
             Thread.sleep(500)
         }
     }
 
     private fun replacePostTriggerTag(post: Szurubooru.Post, newTag: String) {
-        val newTagsList = post.tags.toMutableList()
-        newTagsList.remove(config.triggerTag)
-        newTagsList.add(newTag)
+        val newTagsList = post.tags.minus(config.triggerTag).plus(newTag)
         szurubooru.updatePostTags(post.id, *newTagsList.toTypedArray())
     }
 
