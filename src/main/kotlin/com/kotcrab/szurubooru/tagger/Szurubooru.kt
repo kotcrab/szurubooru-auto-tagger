@@ -48,6 +48,13 @@ class Szurubooru(private val config: SzurubooruDto) {
         return request("tag-categories?fields=name")["results"].array.map { it["name"].string }
     }
 
+    fun getTags(): List<String> {
+        val json = Jsoup.connect("${config.dataPath}tags.json").validateTLSCertificates(false).ignoreContentType(true).execute().body();
+        val list = jsonParser.parse(json)["tags"].asJsonArray.flatMap {
+            it["names"].asJsonArray.map { it.asString }
+        }
+        return list
+    }
     fun uploadFile(file: File, safety: Safety, vararg tags: String) {
         if (file.exists() == false) throw IllegalStateException("file does not exist")
 

@@ -16,6 +16,7 @@ class DanbooruDto {
 
 class SzurubooruDto {
     var apiPath = "https://szurubooru.local/api/"
+    var dataPath = "https://szurubooru.local/data/"
     var username = "auto-tagger"
     var password = "auto-tagger"
 }
@@ -43,6 +44,7 @@ class ConfigDto {
     var checkBooruConnectivity = true
     var storeSourceUrl = true
     var updateImageRating = true
+    var updateImageNotes = true
 
     var tags = TagsDto()
     var singleInstance = SingleInstanceDto()

@@ -50,6 +50,13 @@ class SzurubooruTest {
     }
 
     @Test
+    fun testGetTags() {
+        val tags = Szurubooru(getLocalDto()).getTags()
+        assertTrue(tags.size != 0)
+        assertTrue(tags.contains("fox_ears"))
+    }
+
+    @Test
     @Ignore
     fun batchUpload() {
 //      Szurubooru(getLocalDto()).post("post/2/").ignoreHttpErrors(true).method(Connection.Method.DELETE).execute().body()
@@ -63,6 +70,7 @@ class SzurubooruTest {
     private fun getLocalDto(): SzurubooruDto {
         val dto = SzurubooruDto()
         dto.apiPath = "http://192.168.73.132/api/"
+        dto.dataPath = "http://192.168.73.132/data/"
         return dto
     }
 }

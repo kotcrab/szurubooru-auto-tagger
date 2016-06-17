@@ -9,6 +9,7 @@ noMatchTag: tagme # If post can't be found on IQDB it will be tagged with this t
 checkBooruConnectivity: true # If enabled simple check will be performed to ensuere that auto tagger can connect to Szurubooru and Danbooru
 storeSourceUrl: true # Controls whether to store Danbooru URL in post source field on Szurubooru.
 updateImageRating: true # If true then post rating (safe, questionable, explicit) will be updated from Danbooru.
+updateImageNotes: true # If true then post notes will be obtained from Danbooru
 
 singleInstance: # Ensures that only single instance of auto tagger is running.
   enabled: true
@@ -43,6 +44,7 @@ tags:
 
 szurubooru: # Szurubooru configuration
   apiPath: http://szurubooru.local/api/
+  dataPath: http://szurubooru.local/data/
   username: auto-tagger # Auto-tagger should have its own separate account, make sure it has high enough privileges.
   password: auto-tagger
 
