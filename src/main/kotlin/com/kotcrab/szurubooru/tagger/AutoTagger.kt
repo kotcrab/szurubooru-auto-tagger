@@ -3,6 +3,7 @@ package com.kotcrab.szurubooru.tagger
 import com.github.salomonbrys.kotson.jsonArray
 import com.github.salomonbrys.kotson.jsonObject
 import com.google.gson.JsonObject
+import com.overzealous.remark.Remark
 import java.io.IOException
 import java.net.BindException
 import java.net.InetAddress
@@ -16,6 +17,7 @@ class AutoTagger(private val config: ConfigDto) {
 
     val danbooru = Danbooru(config.danbooru)
     val szurubooru = Szurubooru(config.szurubooru)
+    val remark = Remark()
 
     lateinit var szuruTags: List<String>
     lateinit var szuruTagCategories: List<String>
@@ -159,7 +161,7 @@ class AutoTagger(private val config: ConfigDto) {
                             jsonArray(noteX + noteWidth, noteY + noteHeight),
                             jsonArray(noteX, noteY + noteHeight)
                     ),
-                    "text" to danNote.body.replace("<tn>", "*").replace("</tn>", "*")
+                    "text" to remark.convert(danNote.body.replace("<tn>", "*").replace("</tn>", "*"))
             )
             szuruNotes.add(note)
         }
@@ -249,7 +251,7 @@ class AutoTagger(private val config: ConfigDto) {
     }
 
     private class EscapedTag(val danbooruTag: String, val escapedTag: String) {
-        override fun equals(other: Any?): Boolean{
+        override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other?.javaClass != javaClass) return false
 
@@ -261,7 +263,7 @@ class AutoTagger(private val config: ConfigDto) {
             return true
         }
 
-        override fun hashCode(): Int{
+        override fun hashCode(): Int {
             var result = danbooruTag.hashCode()
             result = 31 * result + escapedTag.hashCode()
             return result
