@@ -77,6 +77,9 @@ class Danbooru(private val config: DanbooruDto) {
         val copyrightTags by lazy { getTags("tag_string_copyright") }
         val tags by lazy { getTags("tag_string") }
         val rating by lazy { Rating.fromDanbooruId(json["rating"].string) }
+        val width by lazy { json["image_width"].int }
+        val height by lazy { json["image_height"].int }
+        val hasNotes by lazy { !json["last_noted_at"].isJsonNull }
 
         private fun getTags(elementName: String): List<String> {
             return json[elementName].string.split(" ")
