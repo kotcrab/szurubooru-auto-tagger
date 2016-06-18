@@ -60,7 +60,8 @@ class Szurubooru(private val config: SzurubooruDto) {
 
     fun escapeTagName(name: String): String {
         var escapedName = name
-        arrayOf(':', '_', '[', ']', '/', '\\', ' ').forEach { escapedName = escapedName.replace(it, '_') }
+        arrayOf('_', '[', ']', '/', '\\', ' ').forEach { escapedName = escapedName.replace(it, '_') }
+        escapedName = escapedName.substring(0, 1).plus(escapedName.substring(1).replace(':', '_')) //: is supported as first character
         return escapedName
     }
 
@@ -108,7 +109,7 @@ class Szurubooru(private val config: SzurubooruDto) {
 
     fun updateTag(name: String, category: String, aliases: List<String>, implications: List<String>, suggestions: List<String>) {
         val json = jsonObject(
-                "name" to jsonArray(name, *aliases.minus(name).toTypedArray()),
+                "names" to jsonArray(name, *aliases.minus(name).toTypedArray()),
                 "category" to category
         )
 
