@@ -145,13 +145,13 @@ class AutoTagger(private val config: ConfigDto) {
         val szuruPost = postSet.szuruPost
         val danNotes = danbooru.getPostNotes(postSet.danPost.id)
         val szuruNotes = ArrayList<JsonObject>()
-        danNotes.forEach { note ->
-            if (note.active == false) return@forEach
+        danNotes.forEach { danNote ->
+            if (danNote.active == false) return@forEach
 
-            val noteX = note.x.toFloat() / danPost.width
-            val noteY = note.y.toFloat() / danPost.height
-            val noteWidth = note.width.toFloat() / danPost.width
-            val noteHeight = note.height.toFloat() / danPost.height
+            val noteX = danNote.x.toFloat() / danPost.width
+            val noteY = danNote.y.toFloat() / danPost.height
+            val noteWidth = danNote.width.toFloat() / danPost.width
+            val noteHeight = danNote.height.toFloat() / danPost.height
             val note = jsonObject(
                     "polygon" to jsonArray(
                             jsonArray(noteX, noteY),
@@ -159,7 +159,7 @@ class AutoTagger(private val config: ConfigDto) {
                             jsonArray(noteX + noteWidth, noteY + noteHeight),
                             jsonArray(noteX, noteY + noteHeight)
                     ),
-                    "text" to note.body
+                    "text" to danNote.body
             )
             szuruNotes.add(note)
         }
