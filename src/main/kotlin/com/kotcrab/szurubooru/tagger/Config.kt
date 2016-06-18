@@ -26,7 +26,7 @@ class SzurubooruDto {
     var dataPath = "http://szurubooru.local/data/"
     var username = "auto-tagger"
     var password = "auto-tagger"
-    var tagEscaping = TagEscapingDto()
+    var tagEscaping: TagEscapingDto = TagEscapingDto()
 }
 
 class SingleInstanceDto {

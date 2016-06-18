@@ -6,7 +6,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 /** @author Kotcrab */
-internal class LoadConfigTest {
+class LoadConfigTest {
     @Test
     fun testLoadConfig() {
         val config = loadConfig("config.default.yaml")
