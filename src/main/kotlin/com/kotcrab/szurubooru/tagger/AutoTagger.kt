@@ -46,16 +46,20 @@ class AutoTagger(private val config: ConfigDto) {
     }
 
     fun synchronizeTags() {
-        val createdTags = ArrayList<EscapedTag>()
-        val postsToBeNoted = ArrayList<BooruPost>()
         val newPosts = szurubooru.listAllPosts(config.triggerTag)
         log("There are ${newPosts.size} posts that needs to be tagged")
-
-        postsToBeNoted.add(BooruPost(szurubooru.getPost(45), danbooru.getPost(2174127)))
 
 //      val managedPosts = szurubooru.listAllPosts(config.managedTag)
 //      log("There are ${managedPosts.size} posts that are managed by tagger")
 
+        val createdTags = ArrayList<EscapedTag>()
+        val postsToBeNoted = ArrayList<BooruPost>()
+        updateNewPostsTags(newPosts, postsToBeNoted, createdTags)
+        updatePostsNotes(postsToBeNoted)
+        updateTags(createdTags)
+    }
+
+    private fun updateNewPostsTags(newPosts: List<Szurubooru.Post>, postsToBeNoted: ArrayList<BooruPost>, createdTags: ArrayList<EscapedTag>) {
         newPosts.forEachIndexed { i, post ->
             if (post.isImage() == false) {
                 logErr("Post ${post.id} is not an image.")
@@ -87,7 +91,9 @@ class AutoTagger(private val config: ConfigDto) {
 
             Thread.sleep(500)
         }
+    }
 
+    private fun updatePostsNotes(postsToBeNoted: ArrayList<BooruPost>) {
         if (config.updateImageNotes) {
             log("There are ${postsToBeNoted.size} posts that will have notes updated.")
             postsToBeNoted.forEachIndexed { i, booruPost ->
@@ -117,7 +123,9 @@ class AutoTagger(private val config: ConfigDto) {
                 log("Updated post ${booruPost.szuruPost.id} notes. Completed ${i + 1}/${postsToBeNoted.size}.")
             }
         }
+    }
 
+    private fun updateTags(createdTags: ArrayList<EscapedTag>) {
         log("There are ${createdTags.size} new tags that needs to be updated")
         createdTags.forEachIndexed { i, tag ->
             val danTag = danbooru.getTag(tag.danbooruTag)
