@@ -58,6 +58,10 @@ class Szurubooru(private val config: SzurubooruDto) {
         return list
     }
 
+    fun getInfo(): Info {
+        return Info(restClient.get(arrayOf(config.apiPath, "info")))
+    }
+
     fun escapeTagName(name: String): String {
         var escapedName = name
         arrayOf('[', ']', '{', '}', '/', '\\', ' ', '<', '>', '=', '+', ';', '+', '@', '|', '!', '?')
@@ -144,6 +148,10 @@ class Szurubooru(private val config: SzurubooruDto) {
         fun isImage(): Boolean {
             return json["type"].string == "image"
         }
+    }
+
+    class Info(val json: JsonElement) {
+        val tagNameRegex by lazy { json["config"]["tagNameRegex"].string }
     }
 
     enum class Safety(val szurubooruName: String) {

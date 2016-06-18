@@ -13,7 +13,7 @@ import org.junit.Test
 class DanbooruTest {
     @Test
     fun testGetPost() {
-        val post = Danbooru(DanbooruDto()).getPost(2376896);
+        val post = Danbooru(DanbooruDto()).getPost(2376896)
         assertTrue(post.json.toString().startsWith("""{"id":2376896,"""))
         assertTrue(post.width != 0)
         assertTrue(post.height != 0)

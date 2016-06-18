@@ -16,6 +16,7 @@ class AutoTagger(private val config: ConfigDto) {
 
     lateinit var szuruTags: List<String>
     lateinit var szuruTagCategories: List<String>
+    lateinit var tagNameRegex: Regex
 
     init {
         if (config.singleInstance.enabled) {
@@ -34,6 +35,7 @@ class AutoTagger(private val config: ConfigDto) {
         log("Obtaining tags.json...")
         szuruTags = szurubooru.getTags()
         szuruTagCategories = szurubooru.getTagCategories()
+        tagNameRegex = Regex(szurubooru.getInfo().tagNameRegex)
     }
 
     fun synchronizeTags() {
@@ -62,10 +64,10 @@ class AutoTagger(private val config: ConfigDto) {
                 log("Updated post ${post.id} safety to ${danPost.rating}")
             }
 
-            //TODO: Add regex name check
             val newPostTags = toSzuruTags(danPost.tags)
             newPostTags.forEach {
                 val escapedTag = szurubooru.escapeTagName(it)
+                if (tagNameRegex.matches(escapedTag) == false) return@forEach
                 if (szuruTags.contains(escapedTag) == false) createdTags.add(EscapedTag(it, escapedTag))
             }
 
@@ -106,7 +108,8 @@ class AutoTagger(private val config: ConfigDto) {
 
     private fun toSzuruTags(tags: List<String>): List<String> {
         return tags
-                .filterNot({ config.tags.ignoreTags.contains(it) })
+                .filterNot { config.tags.ignoreTags.contains(it) }
+                .filterNot { it.startsWith("/") } //all Danbooru tags that starts with / seems to be shortcuts for other tags
                 .map { remapTag(it) }
     }
 
@@ -114,7 +117,15 @@ class AutoTagger(private val config: ConfigDto) {
         return escapeTags(toSzuruTags(tags))
     }
 
-    private fun escapeTags(tags: List<String>): List<String> = tags.map { szurubooru.escapeTagName(it) }
+    private fun escapeTags(tags: List<String>): List<String> {
+        return tags
+                .map { szurubooru.escapeTagName(it) }
+                .filter {
+                    val matches = tagNameRegex.matches(it)
+                    if (matches == false) log("Removing invalid tag $it (did not match server tag name regex)")
+                    matches
+                }
+    }
 
     private fun remapTag(tag: String): String {
         config.tags.remapTags.forEach { remap: RemapDto ->
