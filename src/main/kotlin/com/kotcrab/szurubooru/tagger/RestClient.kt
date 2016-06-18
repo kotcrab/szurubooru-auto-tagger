@@ -8,20 +8,28 @@ import org.jsoup.HttpStatusException
 import org.jsoup.Jsoup
 import java.io.FileInputStream
 import java.net.SocketTimeoutException
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
 
 /**
  * [Jsoup] wrapper. [Jsoup] is originally designed to parsing website HTML but even using it for querying REST APIs
  * is very convenient.
  * @author Kotcrab */
-class RestClient(private val basicHttpAuth: String? = null) {
+class RestClient(private val basicHttpAuth: String? = null, private val requestsPerHour: Int = -1) {
     companion object {
         val NORMAL_TIMEOUT = TimeUnit.SECONDS.toMillis(3).toInt()
         val LONG_TIMEOUT = TimeUnit.SECONDS.toMillis(10).toInt()
     }
 
     private val jsonParser = JsonParser()
-    var requestCounter = 0
+
+    private var startTime: LocalDateTime
+    private var requestCounter = 0
+
+    init {
+        startTime = LocalDateTime.now()
+    }
 
     fun get(requestUrl: Array<String>, timeout: Int = NORMAL_TIMEOUT): JsonElement {
         return jsonParser.parse(request(requestUrl.join(), Connection.Method.GET, timeout).executeSafely())
@@ -58,6 +66,22 @@ class RestClient(private val basicHttpAuth: String? = null) {
             } catch (e: SocketTimeoutException) {
                 log("URL ${request().url().toString()} timed out. Retrying in 3 seconds...")
                 Thread.sleep(3000)
+            }
+        }
+
+        if (requestsPerHour != -1) {
+            val minutes = ChronoUnit.MINUTES.between(startTime, LocalDateTime.now())
+            if (minutes > 60) {
+                requestCounter = 0
+                startTime = LocalDateTime.now()
+            }
+
+            if (requestCounter >= requestsPerHour) {
+                val sleepTime = 60 - minutes;
+                log("Request limit exceeded, sleeping for $sleepTime minutes")
+                Thread.sleep(TimeUnit.MINUTES.toMillis(sleepTime))
+                requestCounter = 0
+                startTime = LocalDateTime.now()
             }
         }
 

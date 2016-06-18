@@ -18,9 +18,9 @@ class Danbooru(private val config: DanbooruDto) {
         if (config.anonymous == false) {
             val login: String = "${config.username}:${config.apiKey}"
             val basicHttpAuth = String(Base64.encodeBase64(login.toByteArray(charset = Charsets.US_ASCII)))
-            RestClient(basicHttpAuth)
+            RestClient(basicHttpAuth, config.hourRequestLimit)
         } else {
-            RestClient(null)
+            RestClient(null, config.hourRequestLimit)
         }
     }
 
