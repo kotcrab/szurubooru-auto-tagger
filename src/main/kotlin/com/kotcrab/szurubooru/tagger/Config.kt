@@ -14,11 +14,19 @@ class DanbooruDto {
     var hourRequestLimit = 500
 }
 
+class TagEscapingDto {
+    var escapeCharacters = "[]{}/\\<>=+;@|!?.'"
+    var escapeWith = "_"
+    var ignoreFirstColon = true
+    var removeLastDot = true
+}
+
 class SzurubooruDto {
     var apiPath = "http://szurubooru.local/api/"
     var dataPath = "http://szurubooru.local/data/"
     var username = "auto-tagger"
     var password = "auto-tagger"
+    var tagEscaping = TagEscapingDto()
 }
 
 class SingleInstanceDto {

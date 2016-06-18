@@ -49,6 +49,11 @@ szurubooru: # Szurubooru configuration
   dataPath: http://szurubooru.local/data/
   username: auto-tagger # Auto-tagger should have its own separate account, make sure it has high enough privileges.
   password: auto-tagger
+  tagEscaping:
+    escapeCharacters: []{}/\<>=+;@|!?.' # All those characters in tags names will be replaced with 'escapeWith' string
+    escapeWith: _ # Illegal characters will be replaced by this string
+    ignoreFirstColon: true # Colon (':') by default can be used as first character, if true then first colon will not be escpaed
+    removeLastDot: true # Some Danbooru tags ends with dot ('.'), if enabled then that dot will be removed
 
 danbooru: # Danbooru configuration
   # Whether to authenticate when sending request to Danbooru, using anonymous mode is not recommend as anonymous
