@@ -52,14 +52,14 @@ class AutoTagger(private val config: ConfigDto) {
 //      val managedPosts = szurubooru.listAllPosts(config.managedTag)
 //      log("There are ${managedPosts.size} posts that are managed by tagger")
 
-        val createdTags = ArrayList<EscapedTag>()
+        val createdTags = HashSet<EscapedTag>()
         val postsToBeNoted = ArrayList<PostSet>()
         updatePostsTags(newPosts, postsToBeNoted, createdTags)
         updatePostsNotes(postsToBeNoted)
         updateTags(createdTags)
     }
 
-    private fun updatePostsTags(posts: List<Szurubooru.Post>, postsToBeNoted: ArrayList<PostSet>, createdTags: ArrayList<EscapedTag>) {
+    private fun updatePostsTags(posts: List<Szurubooru.Post>, postsToBeNoted: ArrayList<PostSet>, createdTags: HashSet<EscapedTag>) {
         posts.forEachIndexed { i, post ->
             try {
                 updatePostTags(post, postsToBeNoted, createdTags)
@@ -78,7 +78,7 @@ class AutoTagger(private val config: ConfigDto) {
         }
     }
 
-    private fun updatePostTags(post: Szurubooru.Post, postsToBeNoted: ArrayList<PostSet>, createdTags: ArrayList<EscapedTag>) {
+    private fun updatePostTags(post: Szurubooru.Post, postsToBeNoted: ArrayList<PostSet>, createdTags: HashSet<EscapedTag>) {
         if (post.isImage() == false) {
             logErr("Post ${post.id} is not an image.")
             replacePostTriggerTag(post, config.errorTag)
@@ -159,7 +159,7 @@ class AutoTagger(private val config: ConfigDto) {
                             jsonArray(noteX + noteWidth, noteY + noteHeight),
                             jsonArray(noteX, noteY + noteHeight)
                     ),
-                    "text" to danNote.body
+                    "text" to danNote.body.replace("<tn>", "*").replace("</tn>", "*")
             )
             szuruNotes.add(note)
         }
@@ -167,7 +167,7 @@ class AutoTagger(private val config: ConfigDto) {
 
     }
 
-    private fun updateTags(createdTags: ArrayList<EscapedTag>) {
+    private fun updateTags(createdTags: HashSet<EscapedTag>) {
         log("There are ${createdTags.size} new tags that needs to be updated")
         createdTags.forEachIndexed { i, tag ->
             try {
@@ -204,7 +204,7 @@ class AutoTagger(private val config: ConfigDto) {
                 .map { szurubooru.escapeTagName(it) }
                 .filter {
                     val matches = tagNameRegex.matches(it)
-                    if (matches == false) log("Removing invalid tag $it (did not match server tag name regex)")
+                    if (matches == false) log("Removing invalid tag \"$it\" (did not match server tag name regex)")
                     matches
                 }
     }
@@ -248,7 +248,25 @@ class AutoTagger(private val config: ConfigDto) {
         }
     }
 
-    private class EscapedTag(val danbooruTag: String, val escapedTag: String)
+    private class EscapedTag(val danbooruTag: String, val escapedTag: String) {
+        override fun equals(other: Any?): Boolean{
+            if (this === other) return true
+            if (other?.javaClass != javaClass) return false
+
+            other as EscapedTag
+
+            if (danbooruTag != other.danbooruTag) return false
+            if (escapedTag != other.escapedTag) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int{
+            var result = danbooruTag.hashCode()
+            result = 31 * result + escapedTag.hashCode()
+            return result
+        }
+    }
 
     private class PostSet(val szuruPost: Szurubooru.Post, val danPost: Danbooru.Post)
 }

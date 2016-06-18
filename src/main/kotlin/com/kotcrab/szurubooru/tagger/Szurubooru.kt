@@ -64,7 +64,8 @@ class Szurubooru(private val config: SzurubooruDto) {
 
     fun escapeTagName(name: String): String {
         var escapedName = name
-        arrayOf('[', ']', '{', '}', '/', '\\', ' ', '<', '>', '=', '+', ';', '+', '@', '|', '!', '?')
+        if (escapedName.endsWith(".")) escapedName.substring(0, escapedName.length - 1)
+        arrayOf('[', ']', '{', '}', '/', '\\', ' ', '<', '>', '=', '+', ';', '+', '@', '|', '!', '?', '.')
                 .forEach { escapedName = escapedName.replace(it, '_') }
         escapedName = escapedName.substring(0, 1).plus(escapedName.substring(1).replace(':', '_')) //: is supported as first character
         return escapedName
