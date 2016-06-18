@@ -36,6 +36,10 @@ class AutoTagger(private val config: ConfigDto) {
         szuruTags = szurubooru.getTags()
         szuruTagCategories = szurubooru.getTagCategories()
         tagNameRegex = Regex(szurubooru.getInfo().tagNameRegex)
+
+        val missingCategories = Danbooru.TagCategory.values().filterNot { szuruTagCategories.contains(remapTagCategroy(it.remapName)) }
+        if (missingCategories.size != 0) throw IllegalStateException("Szurubooru is missing required tag categories: ${missingCategories.joinToString { it.remapName }}. " +
+                "Make sure they exist or modify tag category remapping configuration.")
     }
 
     fun synchronizeTags() {
