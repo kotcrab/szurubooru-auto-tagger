@@ -42,7 +42,7 @@ class AutoTagger(private val config: ConfigDto) {
         szuruTagCategories = szurubooru.getTagCategories()
         tagNameRegex = Regex(szurubooru.getInfo().tagNameRegex)
 
-        val missingCategories = Danbooru.TagCategory.values().filterNot { szuruTagCategories.contains(remapTagCategroy(it.remapName)) }
+        val missingCategories = Danbooru.TagCategory.values().filterNot { szuruTagCategories.contains(remapTagCategory(it.remapName)) }
         if (missingCategories.size != 0) throw IllegalStateException("Szurubooru is missing required tag categories: ${missingCategories.joinToString { it.remapName }}. " +
                 "Make sure they exist or modify tag category remapping configuration.")
     }
@@ -184,7 +184,7 @@ class AutoTagger(private val config: ConfigDto) {
 
     private fun updateTag(tag: EscapedTag) {
         val danTag = danbooru.getTag(tag.danbooruTag)
-        szurubooru.updateTag(tag.escapedTag, remapTagCategroy(danTag.category.remapName),
+        szurubooru.updateTag(tag.escapedTag, remapTagCategory(danTag.category.remapName),
                 if (config.tags.obtainAliases) toEscapedSzuruTags(danTag.aliases) else emptyList<String>(),
                 if (config.tags.obtainImplications) toEscapedSzuruTags(danTag.implications) else emptyList<String>(),
                 if (config.tags.obtainSuggestions) toEscapedSzuruTags(danTag.relatedTags) else emptyList<String>())
@@ -219,7 +219,7 @@ class AutoTagger(private val config: ConfigDto) {
         return tag
     }
 
-    private fun remapTagCategroy(category: String): String {
+    private fun remapTagCategory(category: String): String {
         config.tags.remapCategories.forEach { remap: RemapDto ->
             if (remap.from.equals(category)) return remap.to
         }

@@ -2,8 +2,6 @@
 
 IQDB and Danbooru based auto tagger for [szurubooru2](https://github.com/rr-/szurubooru).
 
-Work in progress.
-
 #### How this works
 Auto tagger searches for all posts having trigger tag (`auto_tagme` by default), then sends post images to IQDB in order
 to find matching image on Danbooru. When match is found, Danbooru tags, post safety and notes are retrieved and set for Szurubooru post.
