@@ -2,9 +2,8 @@ package com.kotcrab.szurubooru.tagger
 
 import com.github.salomonbrys.kotson.*
 import com.google.gson.JsonElement
-import com.google.gson.JsonParser
+import com.google.gson.JsonObject
 import org.apache.commons.codec.binary.Base64
-import org.jsoup.Connection
 import org.jsoup.HttpStatusException
 import org.jsoup.Jsoup
 import java.io.File
@@ -17,19 +16,20 @@ import java.util.*
  * @author Kotcrab
  */
 class Szurubooru(private val config: SzurubooruDto) {
-    private val jsonParser = JsonParser()
-    private val basicHttpAuth: String
+    private val restClient by lazy {
+        val login: String = "${config.username}:${config.password}"
+        val basicHttpAuth = String(Base64.encodeBase64(login.toByteArray(charset = Charsets.US_ASCII)))
+        RestClient(basicHttpAuth)
+    }
 
     init {
-        val login: String = "${config.username}:${config.password}"
-        basicHttpAuth = String(Base64.encodeBase64(login.toByteArray(charset = Charsets.US_ASCII)))
         if (config.apiPath.endsWith("/") == false) config.apiPath += "/"
         if (config.dataPath.endsWith("/") == false) config.dataPath += "/"
     }
 
     fun isHostReachable(): Boolean {
         try {
-            request("posts")
+            restClient.get(arrayOf(config.apiPath, "posts"))
             return true
         } catch(e: IOException) {
             return false
@@ -38,7 +38,7 @@ class Szurubooru(private val config: SzurubooruDto) {
 
     fun isAuthorized(): Boolean {
         try {
-            request("posts?bump-login")
+            restClient.get(arrayOf(config.apiPath, "posts", "?bump-login"))
             return true
         } catch(e: HttpStatusException) {
             if (intArrayOf(401, 403, 404).contains(e.statusCode)) return false
@@ -47,12 +47,12 @@ class Szurubooru(private val config: SzurubooruDto) {
     }
 
     fun getTagCategories(): List<String> {
-        return request("tag-categories?fields=name")["results"].array.map { it["name"].string }
+        return restClient.get(arrayOf(config.apiPath, "tag-categories", "?fields=name"))["results"].array.map { it["name"].string }
     }
 
     fun getTags(): List<String> {
-        val json = Jsoup.connect("${config.dataPath}tags.json").validateTLSCertificates(false).ignoreContentType(true).execute().body()
-        val list = jsonParser.parse(json)["tags"].array.flatMap {
+        val json = restClient.get(arrayOf(config.dataPath, "tags.json"))
+        val list = json["tags"].array.flatMap {
             it["names"].array.map { it.string }
         }
         return list
@@ -72,10 +72,9 @@ class Szurubooru(private val config: SzurubooruDto) {
                 "tags" to jsonArray(*tags)
         ).toString()
 
-        prepareRequest("posts/").timeout(10 * 1000)
-                .data("metadata", json)
-                .data("content", file.name, FileInputStream(file))
-                .post()
+        restClient.post(arrayOf(config.apiPath, "posts/"),
+                arrayOf(StringPostArg("metadata", "json"),
+                        FilePostArg("content", file.name, FileInputStream(file))))
     }
 
     fun searchPostOnIqdb(post: Post): String? {
@@ -89,42 +88,34 @@ class Szurubooru(private val config: SzurubooruDto) {
     }
 
     fun updatePostSafety(id: Int, safety: Safety) {
-        val json = jsonObject(
-                "safety" to safety.szurubooruName
-        ).toString()
+        val json = jsonObject("safety" to safety.szurubooruName)
         updatePostData(id, json)
     }
 
     fun updatePostTags(id: Int, vararg tags: String) {
-        val json = jsonObject(
-                "tags" to jsonArray(*tags)
-        ).toString()
+        val json = jsonObject("tags" to jsonArray(*tags))
         updatePostData(id, json)
     }
 
     fun updatePostSource(id: Int, source: String) {
-        val json = jsonObject(
-                "source" to source
-        ).toString()
+        val json = jsonObject("source" to source)
         updatePostData(id, json)
     }
 
+    private fun updatePostData(id: Int, json: JsonObject) {
+        restClient.put(arrayOf(config.apiPath, "post/$id"), json)
+    }
+
     fun updateTag(name: String, category: String, aliases: List<String>, implications: List<String>, suggestions: List<String>) {
-        val jsonObj = jsonObject(
+        val json = jsonObject(
                 "name" to jsonArray(name, *aliases.minus(name).toTypedArray()),
                 "category" to category
         )
 
-        if (implications.size != 0) jsonObj += "implications" to jsonArray(*implications.minus(name).toTypedArray())
-        if (suggestions.size != 0) jsonObj += "suggestions" to jsonArray(*suggestions.minus(name).toTypedArray())
+        if (implications.size != 0) json += "implications" to jsonArray(*implications.minus(name).toTypedArray())
+        if (suggestions.size != 0) json += "suggestions" to jsonArray(*suggestions.minus(name).toTypedArray())
 
-        prepareRequest("tag/$name").method(Connection.Method.PUT)
-                .requestBody(jsonObj.toString()).execute()
-    }
-
-    private fun updatePostData(id: Int, json: String) {
-        prepareRequest("post/$id").method(Connection.Method.PUT)
-                .requestBody(json).execute()
+        restClient.put(arrayOf(config.apiPath, "tag/$name"), json)
     }
 
     fun listAllPosts(query: String): List<Post> {
@@ -132,7 +123,7 @@ class Szurubooru(private val config: SzurubooruDto) {
         val posts = ArrayList<Post>()
 
         while (true) {
-            val json = request("posts/?page=$page&pageSize=100&query=$query")
+            val json = restClient.get(arrayOf(config.apiPath, "posts/", "?page=$page&pageSize=100&query=$query"))
             val postsJson = json["results"].array
             if (postsJson.size() == 0) break
             postsJson.forEach { posts.add(Post(it)) }
@@ -140,16 +131,6 @@ class Szurubooru(private val config: SzurubooruDto) {
         }
 
         return posts
-    }
-
-    private fun prepareRequest(requestUrl: String): Connection {
-        val request = Jsoup.connect("${config.apiPath}$requestUrl").validateTLSCertificates(false).ignoreContentType(true)
-        request.header("Authorization", "Basic $basicHttpAuth")
-        return request
-    }
-
-    private fun request(requestUrl: String): JsonElement {
-        return jsonParser.parse(prepareRequest(requestUrl).execute().body())
     }
 
     class Post(val json: JsonElement) {

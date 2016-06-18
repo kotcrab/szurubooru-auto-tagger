@@ -5,10 +5,8 @@ import com.github.salomonbrys.kotson.get
 import com.github.salomonbrys.kotson.int
 import com.github.salomonbrys.kotson.string
 import com.google.gson.JsonElement
-import com.google.gson.JsonParser
 import org.apache.commons.codec.binary.Base64
 import org.jsoup.HttpStatusException
-import org.jsoup.Jsoup
 
 /**
  * Simple Danbooru client, only method required for auto-tagger are implemented.
@@ -19,19 +17,18 @@ class Danbooru(private val config: DanbooruDto) {
         val URL = "https://danbooru.donmai.us/"
     }
 
-    private val jsonParser = JsonParser()
-    private val basicHttpAuth: String
-    var requestCounter = 0
-        private set
-
-    init {
+    private val restClient by lazy {
         if (config.anonymous == false) {
             val login: String = "${config.username}:${config.apiKey}"
-            basicHttpAuth = String(Base64.encodeBase64(login.toByteArray(charset = Charsets.US_ASCII)))
+            val basicHttpAuth = String(Base64.encodeBase64(login.toByteArray(charset = Charsets.US_ASCII)))
+            RestClient(basicHttpAuth)
         } else {
-            basicHttpAuth = ""
+            RestClient(null)
         }
     }
+
+    var requestCounter = 0
+        private set
 
     fun isAuthorized(): Boolean {
         if (config.anonymous) {
@@ -56,13 +53,13 @@ class Danbooru(private val config: DanbooruDto) {
     }
 
     fun getTag(name: String): Tag {
-        val searchResult = request("tags.json?search[name_matches]=$name").array
+        val searchResult = restClient.get(arrayOf(URL, "tags.json", "?search[name_matches]=$name")).array
         if (searchResult.size() == 0) throw IllegalStateException("Query did not match any tag: $name")
         if (searchResult.size() > 1) throw IllegalStateException("Query matched more than one tag")
         return Tag(
                 searchResult.first(),
-                request("tag_aliases.json?search[name_matches]=$name"),
-                request("tag_implications.json?search[antecedent_name]=$name"))
+                restClient.get(arrayOf(URL, "tag_aliases.json", "?search[name_matches]=$name")),
+                restClient.get(arrayOf(URL, "tag_implications.json", "?search[antecedent_name]=$name")))
     }
 
     fun getPost(url: String): Post {
@@ -70,16 +67,7 @@ class Danbooru(private val config: DanbooruDto) {
     }
 
     fun getPost(id: Int): Post {
-        return Post(request("posts/$id.json"))
-    }
-
-    private fun request(requestUrl: String): JsonElement {
-        val request = Jsoup.connect("$URL$requestUrl").validateTLSCertificates(false).ignoreContentType(true)
-        if (config.anonymous == false)
-            request.header("Authorization", "Basic $basicHttpAuth")
-        requestCounter += 1
-        val json = request.execute().body()
-        return jsonParser.parse(json)
+        return Post(restClient.get(arrayOf(URL, "posts/$id.json")))
     }
 
     class Post(val json: JsonElement) {

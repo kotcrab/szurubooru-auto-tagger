@@ -15,22 +15,17 @@ import org.junit.Test
 class SzurubooruTest {
     @Test
     fun testHostReachable() {
-        assertTrue(Szurubooru(getLocalDto()).isHostReachable())
-    }
-
-    @Test
-    fun testHostNotReachable() {
-        assertFalse(Szurubooru(SzurubooruDto()).isHostReachable())
+        assertTrue(Szurubooru(SzurubooruDto()).isHostReachable())
     }
 
     @Test
     fun testAuthorized() {
-        assertTrue(Szurubooru(getLocalDto()).isAuthorized())
+        assertTrue(Szurubooru(SzurubooruDto()).isAuthorized())
     }
 
     @Test
     fun testNotAuthorizedNoSuchUser() {
-        val dto = getLocalDto()
+        val dto = SzurubooruDto()
         dto.username = "not-a-user"
         dto.password = "not-a-password"
         assertFalse(Szurubooru(dto).isAuthorized())
@@ -38,7 +33,7 @@ class SzurubooruTest {
 
     @Test
     fun testNotAuthorizedInvalidPassword() {
-        val dto = getLocalDto()
+        val dto = SzurubooruDto()
         dto.username = "auto-tagger"
         dto.password = "not-a-password"
         assertFalse(Szurubooru(dto).isAuthorized())
@@ -46,14 +41,14 @@ class SzurubooruTest {
 
     @Test
     fun testGetTagCategories() {
-        Szurubooru(getLocalDto()).getTagCategories()
+        Szurubooru(SzurubooruDto()).getTagCategories()
     }
 
     @Test
     fun testGetTags() {
-        val tags = Szurubooru(getLocalDto()).getTags()
+        val tags = Szurubooru(SzurubooruDto()).getTags()
         assertTrue(tags.size != 0)
-        assertTrue(tags.contains("fox_ears"))
+        assertTrue(tags.contains("tagme"))
     }
 
     @Test
@@ -65,12 +60,5 @@ class SzurubooruTest {
 //            println("Upload ${it.name}")
 //            szuru.uploadFile(it, Szurubooru.Safety.Safe, "auto_tagme")
 //        }
-    }
-
-    private fun getLocalDto(): SzurubooruDto {
-        val dto = SzurubooruDto()
-        dto.apiPath = "http://192.168.73.132/api/"
-        dto.dataPath = "http://192.168.73.132/data/"
-        return dto
     }
 }
