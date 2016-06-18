@@ -72,6 +72,7 @@ class AutoTagger(private val config: ConfigDto) {
                     replacePostTriggerTag(post, config.errorTag)
                 } catch(e: Exception) {
                     logErr("Additional error occurred when tried to append error tag to post")
+                    e.printStackTrace()
                 }
             }
         }
