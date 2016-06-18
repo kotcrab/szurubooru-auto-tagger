@@ -50,17 +50,18 @@ class RestClient(private val basicHttpAuth: String? = null) {
 
     private fun Connection.executeSafely(): String {
         var response: Connection.Response? = null
-        for (i in 1..3) {
+        for (i in 1..5) {
             try {
                 response = execute()
                 requestCounter++
                 break
             } catch (e: SocketTimeoutException) {
-                log("URL ${request().url().toString()} timed out. Retrying...")
+                log("URL ${request().url().toString()} timed out. Retrying in 3 seconds...")
+                Thread.sleep(3000)
             }
         }
 
-        if (response == null) throw IllegalStateException("URL ${request().url().toString()} timed out after 3 retries")
+        if (response == null) throw IllegalStateException("URL ${request().url().toString()} timed out after 5 retries")
         val statusCode = response.statusCode()
         if (statusCode != 200) {
             throw HttpStatusException("HTTP error fetching URL. Returned request body: \"${response.body()}\"", statusCode, response.url().toString())
