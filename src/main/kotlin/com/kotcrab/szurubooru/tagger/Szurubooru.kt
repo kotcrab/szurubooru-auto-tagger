@@ -79,7 +79,7 @@ class Szurubooru(private val config: SzurubooruDto) {
         ).toString()
 
         restClient.post(arrayOf(config.apiPath, "posts/"),
-                arrayOf(StringPostArg("metadata", "json"),
+                arrayOf(StringPostArg("metadata", json),
                         FilePostArg("content", file.name, FileInputStream(file))))
     }
 
@@ -105,6 +105,11 @@ class Szurubooru(private val config: SzurubooruDto) {
 
     fun updatePostSource(id: Int, source: String) {
         val json = jsonObject("source" to source)
+        updatePostData(id, json)
+    }
+
+    fun updatePostNotes(id: Int, notes: List<JsonObject>) {
+        val json = jsonObject("notes" to jsonArray(*notes.toTypedArray()))
         updatePostData(id, json)
     }
 
@@ -137,6 +142,10 @@ class Szurubooru(private val config: SzurubooruDto) {
         }
 
         return posts
+    }
+
+    fun getPost(id: Int): Post {
+        return Post(restClient.get(arrayOf(config.apiPath, "post/$id")))
     }
 
     class Post(val json: JsonElement) {

@@ -1,5 +1,8 @@
 package com.kotcrab.szurubooru.tagger
 
+import com.github.salomonbrys.kotson.jsonArray
+import com.github.salomonbrys.kotson.jsonObject
+import com.google.gson.JsonObject
 import java.io.IOException
 import java.net.BindException
 import java.net.InetAddress
@@ -44,15 +47,16 @@ class AutoTagger(private val config: ConfigDto) {
 
     fun synchronizeTags() {
         val createdTags = ArrayList<EscapedTag>()
+        val postsToBeNoted = ArrayList<BooruPost>()
         val newPosts = szurubooru.listAllPosts(config.triggerTag)
         log("There are ${newPosts.size} posts that needs to be tagged")
+
+        postsToBeNoted.add(BooruPost(szurubooru.getPost(45), danbooru.getPost(2174127)))
 
 //      val managedPosts = szurubooru.listAllPosts(config.managedTag)
 //      log("There are ${managedPosts.size} posts that are managed by tagger")
 
         newPosts.forEachIndexed { i, post ->
-//            if (i > 3) return@forEachIndexed //TODO DEBUG ONLY
-
             if (post.isImage() == false) {
                 logErr("Post ${post.id} is not an image.")
                 replacePostTriggerTag(post, config.errorTag)
@@ -67,6 +71,9 @@ class AutoTagger(private val config: ConfigDto) {
                 szurubooru.updatePostSafety(post.id, danPost.rating.toSzurubooruSafety())
                 log("Updated post ${post.id} safety to ${danPost.rating}")
             }
+            if (config.updateImageNotes && danPost.hasNotes) {
+                postsToBeNoted.add(BooruPost(post, danPost))
+            }
 
             val newPostTags = toSzuruTags(danPost.tags)
             newPostTags.forEach {
@@ -79,6 +86,36 @@ class AutoTagger(private val config: ConfigDto) {
             log("Updated post ${post.id} tags. Completed ${i + 1}/${newPosts.size}.")
 
             Thread.sleep(500)
+        }
+
+        if (config.updateImageNotes) {
+            log("There are ${postsToBeNoted.size} posts that will have notes updated.")
+            postsToBeNoted.forEachIndexed { i, booruPost ->
+                val danPost = booruPost.danPost
+                val szuruPost = booruPost.szuruPost
+                val danNotes = danbooru.getPostNotes(booruPost.danPost.id)
+                val szuruNotes = ArrayList<JsonObject>()
+                danNotes.forEach { note ->
+                    if (note.active == false) return@forEach
+
+                    val noteX = note.x.toFloat() / danPost.width
+                    val noteY = note.y.toFloat() / danPost.height
+                    val noteWidth = note.width.toFloat() / danPost.width
+                    val noteHeight = note.height.toFloat() / danPost.height
+                    val note = jsonObject(
+                            "polygon" to jsonArray(
+                                    jsonArray(noteX, noteY),
+                                    jsonArray(noteX + noteWidth, noteY),
+                                    jsonArray(noteX + noteWidth, noteY + noteHeight),
+                                    jsonArray(noteX, noteY + noteHeight)
+                            ),
+                            "text" to note.body
+                    )
+                    szuruNotes.add(note)
+                }
+                szurubooru.updatePostNotes(szuruPost.id, szuruNotes)
+                log("Updated post ${booruPost.szuruPost.id} notes. Completed ${i + 1}/${postsToBeNoted.size}.")
+            }
         }
 
         log("There are ${createdTags.size} new tags that needs to be updated")
@@ -171,4 +208,6 @@ class AutoTagger(private val config: ConfigDto) {
     }
 
     private class EscapedTag(val danbooruTag: String, val escapedTag: String)
+
+    private class BooruPost(val szuruPost: Szurubooru.Post, val danPost: Danbooru.Post)
 }

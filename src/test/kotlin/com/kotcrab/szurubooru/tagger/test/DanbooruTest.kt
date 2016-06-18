@@ -15,6 +15,7 @@ class DanbooruTest {
     fun testGetPost() {
         val post = Danbooru(DanbooruDto()).getPost(2376896)
         assertTrue(post.json.toString().startsWith("""{"id":2376896,"""))
+        assertTrue(post.id == 2376896)
         assertTrue(post.width != 0)
         assertTrue(post.height != 0)
         assertFalse(post.hasNotes)
@@ -28,6 +29,18 @@ class DanbooruTest {
         assertTrue(post.characterTags.contains("caster_(fate/extra)"))
         assertTrue(post.generalTags.contains("fox_ears"))
         assertTrue(post.copyrightTags.contains("fate/extra"))
+    }
+
+    @Test
+    fun testGetPostNotes() {
+        val notes = Danbooru(DanbooruDto()).getPostNotes(2174127)
+        assertTrue(notes.size != 0)
+        assertTrue(notes.filter { it.body.contains("Good Luck") }.size != 0)
+        assertTrue(notes[0].active)
+        assertTrue(notes[0].x != 0)
+        assertTrue(notes[0].y != 0)
+        assertTrue(notes[0].width != 0)
+        assertTrue(notes[0].height != 0)
     }
 
     @Test

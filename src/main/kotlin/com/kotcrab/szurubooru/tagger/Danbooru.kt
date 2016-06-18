@@ -1,9 +1,6 @@
 package com.kotcrab.szurubooru.tagger
 
-import com.github.salomonbrys.kotson.array
-import com.github.salomonbrys.kotson.get
-import com.github.salomonbrys.kotson.int
-import com.github.salomonbrys.kotson.string
+import com.github.salomonbrys.kotson.*
 import com.google.gson.JsonElement
 import org.apache.commons.codec.binary.Base64
 import org.jsoup.HttpStatusException
@@ -26,9 +23,6 @@ class Danbooru(private val config: DanbooruDto) {
             RestClient(null)
         }
     }
-
-    var requestCounter = 0
-        private set
 
     fun isAuthorized(): Boolean {
         if (config.anonymous) {
@@ -70,7 +64,12 @@ class Danbooru(private val config: DanbooruDto) {
         return Post(restClient.get(arrayOf(URL, "posts/$id.json")))
     }
 
+    fun getPostNotes(id: Int): List<Note> {
+        return restClient.get(arrayOf(URL, "notes.json", "?group_by=note&search[post_id]=$id")).array.map { Note(it) }
+    }
+
     class Post(val json: JsonElement) {
+        val id by lazy { json["id"].int }
         val artistTags by lazy { getTags("tag_string_artist") }
         val generalTags by lazy { getTags("tag_string_general") }
         val characterTags by lazy { getTags("tag_string_character") }
@@ -98,6 +97,15 @@ class Danbooru(private val config: DanbooruDto) {
 
         val aliases by lazy { aliasesJson.array.map { it["antecedent_name"].string } }
         val implications by lazy { implicationsJson.array.map { it["consequent_name"].string } }
+    }
+
+    class Note(val json: JsonElement) {
+        val x by lazy { json["x"].int }
+        val y by lazy { json["y"].int }
+        val width by lazy { json["width"].int }
+        val height by lazy { json["height"].int }
+        val body by lazy { json["body"].string }
+        val active by lazy { json["is_active"].bool }
     }
 
     enum class TagCategory(val danbooruId: Int, val remapName: String) {
