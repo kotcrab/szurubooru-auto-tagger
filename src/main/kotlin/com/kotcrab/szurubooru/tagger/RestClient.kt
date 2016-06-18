@@ -7,6 +7,7 @@ import org.jsoup.Connection
 import org.jsoup.HttpStatusException
 import org.jsoup.Jsoup
 import java.io.FileInputStream
+import java.net.SocketTimeoutException
 import java.util.concurrent.TimeUnit
 
 /**
@@ -48,8 +49,18 @@ class RestClient(private val basicHttpAuth: String? = null) {
     }
 
     private fun Connection.executeSafely(): String {
-        val response = execute()
-        requestCounter++
+        var response: Connection.Response? = null
+        for (i in 1..3) {
+            try {
+                response = execute()
+                requestCounter++
+                break
+            } catch (e: SocketTimeoutException) {
+                log("URL ${request().url().toString()} timed out. Retrying...")
+            }
+        }
+
+        if (response == null) throw IllegalStateException("URL ${request().url().toString()} timed out after 3 retries")
         val statusCode = response.statusCode()
         if (statusCode != 200) {
             throw HttpStatusException("HTTP error fetching URL. Returned request body: \"${response.body()}\"", statusCode, response.url().toString())

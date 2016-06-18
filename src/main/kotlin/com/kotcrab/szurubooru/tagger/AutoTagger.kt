@@ -53,88 +53,57 @@ class AutoTagger(private val config: ConfigDto) {
 //      log("There are ${managedPosts.size} posts that are managed by tagger")
 
         val createdTags = ArrayList<EscapedTag>()
-        val postsToBeNoted = ArrayList<BooruPost>()
-        updateNewPostsTags(newPosts, postsToBeNoted, createdTags)
+        val postsToBeNoted = ArrayList<PostSet>()
+        updatePostsTags(newPosts, postsToBeNoted, createdTags)
         updatePostsNotes(postsToBeNoted)
         updateTags(createdTags)
     }
 
-    private fun updateNewPostsTags(newPosts: List<Szurubooru.Post>, postsToBeNoted: ArrayList<BooruPost>, createdTags: ArrayList<EscapedTag>) {
-        newPosts.forEachIndexed { i, post ->
-            if (post.isImage() == false) {
-                logErr("Post ${post.id} is not an image.")
-                replacePostTriggerTag(post, config.errorTag)
-                return@forEachIndexed
-            }
+    private fun updatePostsTags(posts: List<Szurubooru.Post>, postsToBeNoted: ArrayList<PostSet>, createdTags: ArrayList<EscapedTag>) {
+        posts.forEachIndexed { i, post ->
+            try {
+                updatePostTags(post, postsToBeNoted, createdTags)
+                log("Updated post ${post.id} tags. Completed ${i + 1}/${posts.size}.")
+            } catch(e: Exception) {
+                logErr("Error occurred while updating post ${post.id} tags")
+                e.printStackTrace()
 
-            val sourceImageUrl = searchPostOnIqdb(post)
-            sourceImageUrl ?: return@forEachIndexed
-
-            val danPost = danbooru.getPost(sourceImageUrl)
-            if (config.updateImageRating) {
-                szurubooru.updatePostSafety(post.id, danPost.rating.toSzurubooruSafety())
-                log("Updated post ${post.id} safety to ${danPost.rating}")
-            }
-            if (config.updateImageNotes && danPost.hasNotes) {
-                postsToBeNoted.add(BooruPost(post, danPost))
-            }
-
-            val newPostTags = toSzuruTags(danPost.tags)
-            newPostTags.forEach {
-                val escapedTag = szurubooru.escapeTagName(it)
-                if (tagNameRegex.matches(escapedTag) == false) return@forEach
-                if (szuruTags.contains(escapedTag) == false) createdTags.add(EscapedTag(it, escapedTag))
-            }
-
-            szurubooru.updatePostTags(post.id, *escapeTags(newPostTags).plus(config.managedTag).toTypedArray())
-            log("Updated post ${post.id} tags. Completed ${i + 1}/${newPosts.size}.")
-
-            Thread.sleep(500)
-        }
-    }
-
-    private fun updatePostsNotes(postsToBeNoted: ArrayList<BooruPost>) {
-        if (config.updateImageNotes) {
-            log("There are ${postsToBeNoted.size} posts that will have notes updated.")
-            postsToBeNoted.forEachIndexed { i, booruPost ->
-                val danPost = booruPost.danPost
-                val szuruPost = booruPost.szuruPost
-                val danNotes = danbooru.getPostNotes(booruPost.danPost.id)
-                val szuruNotes = ArrayList<JsonObject>()
-                danNotes.forEach { note ->
-                    if (note.active == false) return@forEach
-
-                    val noteX = note.x.toFloat() / danPost.width
-                    val noteY = note.y.toFloat() / danPost.height
-                    val noteWidth = note.width.toFloat() / danPost.width
-                    val noteHeight = note.height.toFloat() / danPost.height
-                    val note = jsonObject(
-                            "polygon" to jsonArray(
-                                    jsonArray(noteX, noteY),
-                                    jsonArray(noteX + noteWidth, noteY),
-                                    jsonArray(noteX + noteWidth, noteY + noteHeight),
-                                    jsonArray(noteX, noteY + noteHeight)
-                            ),
-                            "text" to note.body
-                    )
-                    szuruNotes.add(note)
+                try {
+                    replacePostTriggerTag(post, config.errorTag)
+                } catch(e: Exception) {
+                    logErr("Additional error occurred when tried to append error tag to post")
                 }
-                szurubooru.updatePostNotes(szuruPost.id, szuruNotes)
-                log("Updated post ${booruPost.szuruPost.id} notes. Completed ${i + 1}/${postsToBeNoted.size}.")
             }
         }
     }
 
-    private fun updateTags(createdTags: ArrayList<EscapedTag>) {
-        log("There are ${createdTags.size} new tags that needs to be updated")
-        createdTags.forEachIndexed { i, tag ->
-            val danTag = danbooru.getTag(tag.danbooruTag)
-            szurubooru.updateTag(tag.escapedTag, remapTagCategroy(danTag.category.remapName),
-                    if (config.tags.obtainAliases) toEscapedSzuruTags(danTag.aliases) else emptyList<String>(),
-                    if (config.tags.obtainImplications) toEscapedSzuruTags(danTag.implications) else emptyList<String>(),
-                    if (config.tags.obtainSuggestions) toEscapedSzuruTags(danTag.relatedTags) else emptyList<String>())
-            log("Updated tag ${tag.danbooruTag}. Completed ${i + 1}/${createdTags.size}.")
+    private fun updatePostTags(post: Szurubooru.Post, postsToBeNoted: ArrayList<PostSet>, createdTags: ArrayList<EscapedTag>) {
+        if (post.isImage() == false) {
+            logErr("Post ${post.id} is not an image.")
+            replacePostTriggerTag(post, config.errorTag)
+            return
         }
+
+        val sourceImageUrl = searchPostOnIqdb(post)
+        sourceImageUrl ?: return
+
+        val danPost = danbooru.getPost(sourceImageUrl)
+        if (config.updateImageRating) {
+            szurubooru.updatePostSafety(post.id, danPost.rating.toSzurubooruSafety())
+            log("Updated post ${post.id} safety to ${danPost.rating}")
+        }
+        if (config.updateImageNotes && danPost.hasNotes) {
+            postsToBeNoted.add(PostSet(post, danPost))
+        }
+
+        val newPostTags = toSzuruTags(danPost.tags)
+        newPostTags.forEach {
+            val escapedTag = szurubooru.escapeTagName(it)
+            if (tagNameRegex.matches(escapedTag) == false) return@forEach
+            if (szuruTags.contains(escapedTag) == false) createdTags.add(EscapedTag(it, escapedTag))
+        }
+
+        szurubooru.updatePostTags(post.id, *escapeTags(newPostTags).plus(config.managedTag).toTypedArray())
     }
 
     private fun searchPostOnIqdb(post: Szurubooru.Post): String? {
@@ -153,6 +122,69 @@ class AutoTagger(private val config: ConfigDto) {
         }
 
         return sourceImageUrl
+    }
+
+    private fun updatePostsNotes(postsToBeNoted: ArrayList<PostSet>) {
+        if (config.updateImageNotes) {
+            log("There are ${postsToBeNoted.size} posts that will have notes updated.")
+            postsToBeNoted.forEachIndexed { i, postSet ->
+                try {
+                    updatePostNote(postSet)
+                    log("Updated post ${postSet.szuruPost.id} notes. Completed ${i + 1}/${postsToBeNoted.size}.")
+                } catch(e: Exception) {
+                    logErr("Error occurred while updating post ${postSet.szuruPost.id} notes")
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    private fun updatePostNote(postSet: PostSet) {
+        val danPost = postSet.danPost
+        val szuruPost = postSet.szuruPost
+        val danNotes = danbooru.getPostNotes(postSet.danPost.id)
+        val szuruNotes = ArrayList<JsonObject>()
+        danNotes.forEach { note ->
+            if (note.active == false) return@forEach
+
+            val noteX = note.x.toFloat() / danPost.width
+            val noteY = note.y.toFloat() / danPost.height
+            val noteWidth = note.width.toFloat() / danPost.width
+            val noteHeight = note.height.toFloat() / danPost.height
+            val note = jsonObject(
+                    "polygon" to jsonArray(
+                            jsonArray(noteX, noteY),
+                            jsonArray(noteX + noteWidth, noteY),
+                            jsonArray(noteX + noteWidth, noteY + noteHeight),
+                            jsonArray(noteX, noteY + noteHeight)
+                    ),
+                    "text" to note.body
+            )
+            szuruNotes.add(note)
+        }
+        szurubooru.updatePostNotes(szuruPost.id, szuruNotes)
+
+    }
+
+    private fun updateTags(createdTags: ArrayList<EscapedTag>) {
+        log("There are ${createdTags.size} new tags that needs to be updated")
+        createdTags.forEachIndexed { i, tag ->
+            try {
+                updateTag(tag)
+                log("Updated tag ${tag.danbooruTag}. Completed ${i + 1}/${createdTags.size}.")
+            } catch(e: Exception) {
+                logErr("Error occurred while updating tag ${tag.danbooruTag}")
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun updateTag(tag: EscapedTag) {
+        val danTag = danbooru.getTag(tag.danbooruTag)
+        szurubooru.updateTag(tag.escapedTag, remapTagCategroy(danTag.category.remapName),
+                if (config.tags.obtainAliases) toEscapedSzuruTags(danTag.aliases) else emptyList<String>(),
+                if (config.tags.obtainImplications) toEscapedSzuruTags(danTag.implications) else emptyList<String>(),
+                if (config.tags.obtainSuggestions) toEscapedSzuruTags(danTag.relatedTags) else emptyList<String>())
     }
 
     private fun toSzuruTags(tags: List<String>): List<String> {
@@ -217,5 +249,5 @@ class AutoTagger(private val config: ConfigDto) {
 
     private class EscapedTag(val danbooruTag: String, val escapedTag: String)
 
-    private class BooruPost(val szuruPost: Szurubooru.Post, val danPost: Danbooru.Post)
+    private class PostSet(val szuruPost: Szurubooru.Post, val danPost: Danbooru.Post)
 }
