@@ -15,7 +15,7 @@ class LoadConfigTest {
         assertNotNull(config.danbooru)
         assertNotNull(config.szurubooru)
         assertNotNull(config.tags)
-        assertNotNull(config.tags.remapTags)
+        assertNotNull(config.tags.tagEscaping)
         assertNotNull(config.tags.remapCategories)
         assertNotNull(config.tags.ignoreTags)
     }

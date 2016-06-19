@@ -37,7 +37,7 @@ class TagsDto {
     var obtainAliases = true
     var obtainSuggestions = false
     var obtainImplications = true
-    val tagMapFile = "tagMap.yaml"
+    var tagMapFile = "tagMap.yaml"
     var tagEscaping: TagEscapingDto = TagEscapingDto()
     var ignoreTags: List<String> = ArrayList()
     var remapCategories: List<RemapDto> = ArrayList()

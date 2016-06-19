@@ -20,13 +20,13 @@ singleInstance: # Ensures that only single instance of auto tagger is running.
 tags:
   # If true then additional information about tags such as aliases, suggestions or implications will be retrieved from Danbooru.
   obtainAliases: true
-  obtainSuggestions: false # Enabling highly unrecomened, will create many unused tags with little gain
+  obtainSuggestions: false # Enabling highly unrecommended, will create many unused tags with little gain
   obtainImplications: true
   tagMapFile: tagMap.yaml # Path to file where tags mapping will be stored. Path is relative to config file path.
   tagEscaping:
     escapeCharacters: '[]{}/\<>=+;@|!?.''' # All those characters in tags names will be replaced with 'escapeWith' string
     escapeWith: _ # Illegal characters will be replaced by this string
-    ignoreFirstColon: true # Colon (':') by default can be used as first character, if true then first colon will not be escpaed
+    ignoreFirstColon: true # Colon (':') by default can be used as first character, if true then first colon will not be escaped
     removeLastDot: true # Some Danbooru tags ends with dot ('.'), if enabled then that dot will be removed
   # Warning: Tags under `ignoreTags` must be entered as visible on Danbooru. Auto tagger might perform tag name escaping
   # but removing ignored tags is performed before escaping.

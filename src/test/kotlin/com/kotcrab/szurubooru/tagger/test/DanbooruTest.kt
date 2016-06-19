@@ -34,13 +34,15 @@ class DanbooruTest {
     @Test
     fun testGetPostNotes() {
         val notes = Danbooru(DanbooruDto()).getPostNotes(2174127)
-        assertTrue(notes.size != 0)
-        assertTrue(notes.filter { it.body.contains("Good Luck") }.size != 0)
-        assertTrue(notes[0].active)
-        assertTrue(notes[0].x != 0)
-        assertTrue(notes[0].y != 0)
-        assertTrue(notes[0].width != 0)
-        assertTrue(notes[0].height != 0)
+        assertTrue(notes.hasNext())
+        assertTrue(notes.asSequence().filter { it.body.contains("Good Luck") }.iterator().hasNext())
+        notes.forEach { note ->
+            assertTrue(note.active)
+            assertTrue(note.x != 0)
+            assertTrue(note.y != 0)
+            assertTrue(note.width != 0)
+            assertTrue(note.height != 0)
+        }
     }
 
     @Test
