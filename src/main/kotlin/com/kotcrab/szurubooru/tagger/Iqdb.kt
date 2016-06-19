@@ -35,5 +35,7 @@ fun queryIqdb(file: File, services: EnumSet<IqdbServices> = EnumSet.of(IqdbServi
     val document = connection.post()
     val bestMatchHeader = document.select("tr:contains(Best match)")
     if (bestMatchHeader.size == 0) return null
-    return bestMatchHeader.parents()[0].select("td.image > a").attr("href")
+    val url = bestMatchHeader.parents()[0].select("td.image > a").attr("href")
+    if (url.startsWith("//")) return "https:" + url
+    return url
 }

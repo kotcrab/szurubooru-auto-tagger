@@ -1,27 +1,40 @@
 package com.kotcrab.szurubooru.tagger
 
+import com.esotericsoftware.yamlbeans.YamlReader
+import com.esotericsoftware.yamlbeans.YamlWriter
 import com.github.salomonbrys.kotson.jsonArray
 import com.github.salomonbrys.kotson.jsonObject
 import com.google.gson.JsonObject
+import com.overzealous.remark.IgnoredHtmlElement
+import com.overzealous.remark.Options
 import com.overzealous.remark.Remark
-import java.io.IOException
+import java.io.*
 import java.net.BindException
 import java.net.InetAddress
 import java.net.ServerSocket
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.*
 import kotlin.system.exitProcess
 
 /** @author Kotcrab */
-class AutoTagger(private val config: ConfigDto) {
+class AutoTagger(private val config: ConfigDto, workingDir: File) {
     private lateinit var lockSocket: ServerSocket
 
     val danbooru = Danbooru(config.danbooru)
     val szurubooru = Szurubooru(config.szurubooru)
-    val remark = Remark()
+    val remark by lazy {
+        val options = Options.markdown()
+        options.inWordEmphasis
+        options.getIgnoredHtmlElements().add(IgnoredHtmlElement.create("tn"))
+        Remark(options)
+    }
 
     lateinit var szuruTags: List<String>
     lateinit var szuruTagCategories: List<String>
     lateinit var tagNameRegex: Regex
+
+    lateinit var tagMap: HashMap<String, String>
 
     init {
         if (config.singleInstance.enabled) {
@@ -37,6 +50,9 @@ class AutoTagger(private val config: ConfigDto) {
             log("Booru connectivity check skipped")
         }
 
+        log("Reading tag map...")
+        tagMap = readTagMap()
+
         log("Obtaining tags.json...")
         szuruTags = szurubooru.getTags()
         szuruTagCategories = szurubooru.getTagCategories()
@@ -47,21 +63,141 @@ class AutoTagger(private val config: ConfigDto) {
                 "Make sure they exist or modify tag category remapping configuration.")
     }
 
-    fun synchronizeTags() {
-        val newPosts = szurubooru.listAllPosts(config.triggerTag)
-        log("There are ${newPosts.size} posts that needs to be tagged")
-
-//      val managedPosts = szurubooru.listAllPosts(config.managedTag)
-//      log("There are ${managedPosts.size} posts that are managed by tagger")
-
-        val createdTags = HashSet<EscapedTag>()
-        val postsToBeNoted = ArrayList<PostSet>()
-        updatePostsTags(newPosts, postsToBeNoted, createdTags)
-        updatePostsNotes(postsToBeNoted)
-        updateTags(createdTags)
+    fun readTagMap(): HashMap<String, String> {
+        val tagMapFile = File(config.tags.tagMapFile)
+        if (tagMapFile.exists()) {
+            val tagMap = YamlReader(FileReader(tagMapFile)).read(HashMap::class.java)
+            tagMap ?: return HashMap()
+            return tagMap as HashMap<String, String>
+        } else {
+            return HashMap()
+        }
     }
 
-    private fun updatePostsTags(posts: List<Szurubooru.Post>, postsToBeNoted: ArrayList<PostSet>, createdTags: HashSet<EscapedTag>) {
+    fun saveTagMap() {
+        val writer = YamlWriter(FileWriter(config.tags.tagMapFile))
+        writer.write(tagMap)
+        writer.close()
+    }
+
+    fun run(task: Task, taskArguments: List<String>?) {
+        when (task) {
+            Task.NewPosts -> {
+                val newPosts = szurubooru.pagedPosts(config.triggerTag).toList()
+                log("There are ${newPosts.size} posts that needs to be tagged")
+                runForPosts(newPosts)
+            }
+
+            Task.ExistingPosts -> {
+                val managedPosts = szurubooru.pagedPosts(config.managedTag)
+                log("Updating tags of existing posts.")
+                managedPosts.forEachPage {
+                    log("Page ${managedPosts.page}, page size ${it.size}")
+                    runForPosts(it)
+                }
+            }
+
+            Task.Posts -> {
+                if (taskArguments == null) throw IllegalStateException("You must specify post id for selected task")
+                try {
+                    runForPosts(taskArguments.map { szurubooru.getPost(it.toInt()) })
+                } catch(e: NumberFormatException) {
+                    throw IllegalStateException("Post ids must be numbers", e)
+                }
+            }
+
+            Task.NewTags -> {
+                runForAllTags(true)
+                saveTagMap()
+            }
+            Task.ExistingTags -> {
+                runForAllTags(false)
+                saveTagMap()
+            }
+
+            Task.Tags -> {
+                if (taskArguments == null) throw IllegalStateException("You must specify tag name for selected task")
+                taskArguments.forEach {
+                    try {
+                        updateTag(reverseTagRemap(it))
+                        log("Updated tag $it.")
+                    } catch(e: Exception) {
+                        log("Error while updating tag $it.")
+                    }
+                }
+            }
+
+            Task.Notes -> {
+                if (taskArguments == null) throw IllegalStateException("You must specify post id for selected task")
+                try {
+                    taskArguments.forEach {
+                        val szuruPost = szurubooru.getPost(it.toInt())
+                        log("Searching IQDB match for post ${szuruPost.id}...")
+                        val sourceImageUrl = szurubooru.searchPostOnIqdb(szuruPost)
+                        if (sourceImageUrl == null) {
+                            log("Post ${szuruPost.id} not found in the IQDB datebase.")
+                            return@forEach
+                        }
+                        log("Found post ${szuruPost.id} match: $sourceImageUrl")
+                        val danPost = danbooru.getPost(sourceImageUrl)
+                        updatePostNote(PostSet(szuruPost, danPost))
+                        log("Updated post ${szuruPost.id} notes.")
+                    }
+                } catch(e: NumberFormatException) {
+                    throw IllegalStateException("Post ids must be numbers", e)
+                }
+            }
+
+            Task.BatchUpload -> {
+                if (taskArguments == null) throw IllegalStateException("You must specify source directory for selected task")
+                val sourceDir = File(taskArguments.first())
+                log("Batch upload mode. Source ${sourceDir.absolutePath}")
+                if (sourceDir.exists() == false) throw IllegalStateException("Provided directory path does not exist")
+                val files = sourceDir.listFiles(FileFilter { arrayOf("jpg", "jpeg", "png", "bmp").contains(it.extension) })
+                if (files.size == 0) {
+                    log("Source directory is empty")
+                    return
+                }
+                val uploadedDir = sourceDir.child("uploaded")
+                uploadedDir.mkdir()
+                files.forEachIndexed { index, file ->
+                    szurubooru.uploadFile(file, Szurubooru.Safety.Safe, config.batchUploadTag)
+                    Files.move(file.toPath(), uploadedDir.child(file.name).toPath(), StandardCopyOption.REPLACE_EXISTING)
+                    log("Uploaded file ${file.name}. Completed ${index + 1}/${files.size}")
+                }
+            }
+        }
+    }
+
+    private fun runForAllTags(onlyNeverEdited: Boolean) {
+        val tags = szurubooru.iterableTags("*")
+        for ((index, tag) in tags.withIndex()) {
+            if (tags.pageJustFetched) {
+                log("Page ${tags.page}, page size ${tags.pageSize}")
+            }
+            if (onlyNeverEdited && tag.wasEdited) continue
+
+            try {
+                updateTag(reverseTagRemap(tag.name))
+                log("Updated tag ${tag.name}. Completed ${index + 1}/${tags.pageSize} on current page.")
+            } catch(e: Exception) {
+                logErr("Error occurred while updating tag $tag")
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun runForPosts(posts: List<Szurubooru.Post>) {
+        val createdTags = HashSet<TagSet>()
+        val postsToBeNoted = ArrayList<PostSet>()
+        updatePostsTags(posts, postsToBeNoted, createdTags)
+        saveTagMap()
+        updatePostsNotes(postsToBeNoted)
+        updateTags(createdTags)
+        saveTagMap()
+    }
+
+    private fun updatePostsTags(posts: List<Szurubooru.Post>, postsToBeNoted: ArrayList<PostSet>, createdTags: HashSet<TagSet>) {
         posts.forEachIndexed { i, post ->
             try {
                 updatePostTags(post, postsToBeNoted, createdTags)
@@ -80,7 +216,7 @@ class AutoTagger(private val config: ConfigDto) {
         }
     }
 
-    private fun updatePostTags(post: Szurubooru.Post, postsToBeNoted: ArrayList<PostSet>, createdTags: HashSet<EscapedTag>) {
+    private fun updatePostTags(post: Szurubooru.Post, postsToBeNoted: ArrayList<PostSet>, createdTags: HashSet<TagSet>) {
         if (post.isImage() == false) {
             logErr("Post ${post.id} is not an image.")
             replacePostTriggerTag(post, config.errorTag)
@@ -99,14 +235,12 @@ class AutoTagger(private val config: ConfigDto) {
             postsToBeNoted.add(PostSet(post, danPost))
         }
 
-        val newPostTags = toSzuruTags(danPost.tags)
+        val newPostTags = toSzuruTagsMap(danPost.tags)
         newPostTags.forEach {
-            val escapedTag = szurubooru.escapeTagName(it)
-            if (tagNameRegex.matches(escapedTag) == false) return@forEach
-            if (szuruTags.contains(escapedTag) == false) createdTags.add(EscapedTag(it, escapedTag))
+            if (szuruTags.contains(it.szuruTag) == false) createdTags.add(it)
         }
 
-        szurubooru.updatePostTags(post.id, *escapeTags(newPostTags).plus(config.managedTag).toTypedArray())
+        szurubooru.updatePostTags(post.id, *toSzuruTags(danPost.tags).plus(config.managedTag).toTypedArray())
     }
 
     private fun searchPostOnIqdb(post: Szurubooru.Post): String? {
@@ -161,7 +295,7 @@ class AutoTagger(private val config: ConfigDto) {
                             jsonArray(noteX + noteWidth, noteY + noteHeight),
                             jsonArray(noteX, noteY + noteHeight)
                     ),
-                    "text" to remark.convert(danNote.body.replace("<tn>", "*").replace("</tn>", "*"))
+                    "text" to htmlToMarkdown(danNote.body)
             )
             szuruNotes.add(note)
         }
@@ -169,25 +303,25 @@ class AutoTagger(private val config: ConfigDto) {
 
     }
 
-    private fun updateTags(createdTags: HashSet<EscapedTag>) {
+    private fun updateTags(createdTags: HashSet<TagSet>) {
         log("There are ${createdTags.size} new tags that needs to be updated")
         createdTags.forEachIndexed { i, tag ->
             try {
                 updateTag(tag)
-                log("Updated tag ${tag.danbooruTag}. Completed ${i + 1}/${createdTags.size}.")
+                log("Updated tag ${tag.danTag}. Completed ${i + 1}/${createdTags.size}.")
             } catch(e: Exception) {
-                logErr("Error occurred while updating tag ${tag.danbooruTag}")
+                logErr("Error occurred while updating tag ${tag.danTag}")
                 e.printStackTrace()
             }
         }
     }
 
-    private fun updateTag(tag: EscapedTag) {
-        val danTag = danbooru.getTag(tag.danbooruTag)
-        szurubooru.updateTag(tag.escapedTag, remapTagCategory(danTag.category.remapName),
-                if (config.tags.obtainAliases) toEscapedSzuruTags(danTag.aliases) else emptyList<String>(),
-                if (config.tags.obtainImplications) toEscapedSzuruTags(danTag.implications) else emptyList<String>(),
-                if (config.tags.obtainSuggestions) toEscapedSzuruTags(danTag.relatedTags) else emptyList<String>())
+    private fun updateTag(tag: TagSet) {
+        val danTag = danbooru.getTag(tag.danTag)
+        szurubooru.updateTag(tag.szuruTag, remapTagCategory(danTag.category.remapName),
+                if (config.tags.obtainAliases) toSzuruTags(danTag.aliases) else emptyList<String>(),
+                if (config.tags.obtainImplications) toSzuruTags(danTag.implications) else emptyList<String>(),
+                if (config.tags.obtainSuggestions) toSzuruTags(danTag.relatedTags) else emptyList<String>())
     }
 
     private fun toSzuruTags(tags: List<String>): List<String> {
@@ -195,15 +329,6 @@ class AutoTagger(private val config: ConfigDto) {
                 .filterNot { config.tags.ignoreTags.contains(it) }
                 .filterNot { it.startsWith("/") } //all Danbooru tags that starts with / seems to be shortcuts for other tags
                 .map { remapTag(it) }
-    }
-
-    private fun toEscapedSzuruTags(tags: List<String>): List<String> {
-        return escapeTags(toSzuruTags(tags))
-    }
-
-    private fun escapeTags(tags: List<String>): List<String> {
-        return tags
-                .map { szurubooru.escapeTagName(it) }
                 .filter {
                     val matches = tagNameRegex.matches(it)
                     if (matches == false) log("Removing invalid tag \"$it\" (did not match server tag name regex)")
@@ -211,12 +336,16 @@ class AutoTagger(private val config: ConfigDto) {
                 }
     }
 
-    private fun remapTag(tag: String): String {
-        config.tags.remapTags.forEach { remap: RemapDto ->
-            if (remap.from.equals(tag)) return remap.to
-        }
-
-        return tag
+    private fun toSzuruTagsMap(tags: List<String>): List<TagSet> {
+        return tags
+                .filterNot { config.tags.ignoreTags.contains(it) }
+                .filterNot { it.startsWith("/") }
+                .map { TagSet(remapTag(it), it) }
+                .filter {
+                    val matches = tagNameRegex.matches(it.szuruTag)
+                    if (matches == false) log("Removing invalid tag \"${it.szuruTag}\" (did not match server tag name regex)")
+                    matches
+                }
     }
 
     private fun remapTagCategory(category: String): String {
@@ -250,25 +379,70 @@ class AutoTagger(private val config: ConfigDto) {
         }
     }
 
-    private class EscapedTag(val danbooruTag: String, val escapedTag: String) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other?.javaClass != javaClass) return false
-
-            other as EscapedTag
-
-            if (danbooruTag != other.danbooruTag) return false
-            if (escapedTag != other.escapedTag) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = danbooruTag.hashCode()
-            result = 31 * result + escapedTag.hashCode()
-            return result
-        }
+    private fun remapTag(danbooruTag: String): String {
+        return tagMap.getOrPut(danbooruTag, { escapeTagName(danbooruTag) })
     }
 
-    private class PostSet(val szuruPost: Szurubooru.Post, val danPost: Danbooru.Post)
+    private fun reverseTagRemap(szurubooruTag: String): TagSet {
+        for ((danTag, szuruTag) in tagMap) {
+            if (szuruTag == szurubooruTag) return TagSet(szuruTag, danTag)
+        }
+        throw IllegalStateException("No reverse mapping exists for tag #$szurubooruTag")
+    }
+
+    private fun htmlToMarkdown(html: String): String {
+        var escaped = remark.convert(html)
+        arrayOf("*" to "&#42;",
+                "_" to "&#95;",
+                "{" to "&#123;",
+                "}" to "&#125;",
+                "[" to "&#91;",
+                "]" to "&#93;",
+                "(" to "&#40;",
+                ")" to "&#41;",
+                "#" to "&#35;",
+                "+" to "&#43;",
+                "-" to "&#45;",
+                "." to "&#46;",
+                "!" to "&#33;",
+                "\\" to "&#92;",
+                "`" to "&#96;")
+                .forEach { escaped = escaped.replace("\\" + it.first, it.second) }
+        return escaped.replace("<tn>", "\n\n*").replace("<tn/>", "*")
+    }
+
+    private fun escapeTagName(danbooruTag: String): String {
+        val tagEscaping = config.tags.tagEscaping
+        var escapedName = danbooruTag
+        if (tagEscaping.removeLastDot && escapedName.endsWith(".")) {
+            escapedName.substring(0, escapedName.length - 1)
+        }
+
+        tagEscaping.escapeCharacters.forEach { escapedName = escapedName.replace(it.toString(), tagEscaping.escapeWith) }
+
+        if (tagEscaping.ignoreFirstColon) {
+            escapedName = escapedName.substring(0, 1).plus(escapedName.substring(1).replace(":", tagEscaping.escapeWith)) //: is supported as first character
+        }
+
+        return escapedName
+    }
+
+    fun File.child(path: String): File {
+        return File(this, path)
+    }
+
+    class TagSet(val szuruTag: String, val danTag: String)
+    class PostSet(val szuruPost: Szurubooru.Post, val danPost: Danbooru.Post)
+
+    enum class Task(val description: String, val hasArgument: Boolean = false) {
+        NewPosts("Updates new posts (having config.triggerTag)"),
+        ExistingPosts("Updates already tagged posts (having config.managedTag)"),
+        NewTags("Updates tags that wasn't ever updated"),
+        ExistingTags ("Updates existing tags"),
+        Posts ("Updates specified posts, you must specify post ids: Posts <postId1> [postId2] [postId3] ...", true),
+        Tags ("Updates single tag, you must specify tag names: Tags <tagName1> [tagName2] [tagName3] ...", true),
+        Notes ("Updates post notes only, you must specify post ids: Notes <postId1> [postId2] [postId3] ...", true),
+        BatchUpload ("Upload all image files from given directory. You must specify path to source directory: BatchUpload <path>. " +
+                "Warning: Uploaded images will be moved to 'uploaded' directory to simplify upload resuming.", true)
+    }
 }

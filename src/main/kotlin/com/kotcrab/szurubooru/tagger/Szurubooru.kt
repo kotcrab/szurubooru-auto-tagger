@@ -62,21 +62,6 @@ class Szurubooru(private val config: SzurubooruDto) {
         return Info(restClient.get(arrayOf(config.apiPath, "info")))
     }
 
-    fun escapeTagName(name: String): String {
-        var escapedName = name
-        if (config.tagEscaping.removeLastDot && escapedName.endsWith(".")) {
-            escapedName.substring(0, escapedName.length - 1)
-        }
-
-        config.tagEscaping.escapeCharacters.forEach { escapedName = escapedName.replace(it.toString(), config.tagEscaping.escapeWith) }
-
-        if (config.tagEscaping.ignoreFirstColon) {
-            escapedName = escapedName.substring(0, 1).plus(escapedName.substring(1).replace(":", config.tagEscaping.escapeWith)) //: is supported as first character
-        }
-
-        return escapedName
-    }
-
     fun uploadFile(file: File, safety: Safety, vararg tags: String) {
         if (file.exists() == false) throw IllegalStateException("file does not exist")
 
@@ -85,9 +70,15 @@ class Szurubooru(private val config: SzurubooruDto) {
                 "tags" to jsonArray(*tags)
         ).toString()
 
+        val inputStream = FileInputStream(file)
         restClient.post(arrayOf(config.apiPath, "posts/"),
                 arrayOf(StringPostArg("metadata", json),
-                        FilePostArg("content", file.name, FileInputStream(file))))
+                        FilePostArg("content", file.name, inputStream)))
+        inputStream.close()
+    }
+
+    fun getPost(id: Int): Post {
+        return Post(restClient.get(arrayOf(config.apiPath, "post/$id")))
     }
 
     fun searchPostOnIqdb(post: Post): String? {
@@ -136,24 +127,19 @@ class Szurubooru(private val config: SzurubooruDto) {
         restClient.put(arrayOf(config.apiPath, "tag/$name"), json)
     }
 
-    fun listAllPosts(query: String): List<Post> {
-        var page = 1
-        val posts = ArrayList<Post>()
 
-        while (true) {
-            val json = restClient.get(arrayOf(config.apiPath, "posts/", "?page=$page&pageSize=100&query=$query"))
-            val postsJson = json["results"].array
-            if (postsJson.size() == 0) break
-            postsJson.forEach { posts.add(Post(it)) }
-            page++
-        }
-
-        return posts
+    private fun fetchPage(baseUrl: String, page: Int, query: String): List<JsonElement> {
+        val results = ArrayList<JsonElement>()
+        val json = restClient.get(arrayOf(config.apiPath, baseUrl, "?page=$page&pageSize=100&query=$query"))["results"].array
+        json.forEach { results.add(it) }
+        return results
     }
 
-    fun getPost(id: Int): Post {
-        return Post(restClient.get(arrayOf(config.apiPath, "post/$id")))
-    }
+    fun pagedPosts(query: String): PagedResource<Post> = PagedResource({ fetchPage("posts/", it, query) }, { it -> Post(it) })
+    fun pagedTags(query: String): PagedResource<Tag> = PagedResource({ fetchPage("tags/", it, query) }, { it -> Tag(it) })
+
+    fun iterablePosts(query: String): IterablePagedResource<Post> = IterablePagedResource({ fetchPage("posts/", it, query) }, { it -> Post(it) })
+    fun iterableTags(query: String): IterablePagedResource<Tag> = IterablePagedResource({ fetchPage("tags/", it, query) }, { it -> Tag(it) })
 
     class Post(val json: JsonElement) {
         val id by lazy { json["id"].int }
@@ -164,6 +150,11 @@ class Szurubooru(private val config: SzurubooruDto) {
         fun isImage(): Boolean {
             return json["type"].string == "image"
         }
+    }
+
+    class Tag(val json: JsonElement) {
+        val name by lazy { json["names"].array.first().string }
+        val wasEdited by lazy { !json["lastEditTime"].isJsonNull }
     }
 
     class Info(val json: JsonElement) {

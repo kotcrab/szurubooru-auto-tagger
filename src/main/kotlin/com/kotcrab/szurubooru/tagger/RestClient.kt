@@ -10,6 +10,7 @@ import java.io.FileInputStream
 import java.net.SocketTimeoutException
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 /**
@@ -77,7 +78,7 @@ class RestClient(private val basicHttpAuth: String? = null, private val requests
             }
 
             if (requestCounter >= requestsPerHour) {
-                val sleepTime = 60 - minutes;
+                val sleepTime = 60 - minutes
                 log("Request limit exceeded, sleeping for $sleepTime minutes")
                 Thread.sleep(TimeUnit.MINUTES.toMillis(sleepTime))
                 requestCounter = 0
@@ -85,12 +86,83 @@ class RestClient(private val basicHttpAuth: String? = null, private val requests
             }
         }
 
-        if (response == null) throw IllegalStateException("URL ${request().url().toString()} timed out after 5 retries")
+        if (response == null) throw IllegalStateException("URL `${request().url().toString()}` timed out after 5 retries")
         val statusCode = response.statusCode()
         if (statusCode != 200) {
             throw HttpStatusException("HTTP error fetching URL. Returned request body: \"${response.body()}\"", statusCode, response.url().toString())
         }
         return response.body()
+    }
+}
+
+/** @param fetchPage fetch next page and return list of json elements, Int is page number */
+class PagedResource<T>(val fetchPage: (Int) -> List<JsonElement>, val transform: (JsonElement) -> T) {
+    var results = emptyList<T>()
+    var page = 0
+        private set
+    var done = false
+        private set
+
+    init {
+        fetchNextPage()
+    }
+
+    fun fetchNextPage() {
+        page++
+        results = fetchPage.invoke(page).map(transform)
+        if (results.size == 0) done = true
+    }
+
+    fun forEachPage(consumer: (List<T>) -> Unit) {
+        while (true) {
+            consumer.invoke(results)
+            fetchNextPage()
+            if (done) break
+        }
+    }
+
+    fun toList(): List<T> {
+        val list = ArrayList<T>()
+        forEachPage { list.addAll(it) }
+        return list
+    }
+}
+
+/** @param fetchPage fetch next page and return list of json elements, Int is page number */
+class IterablePagedResource<T>(val fetchPage: (Int) -> List<JsonElement>, val transform: (JsonElement) -> T) : AbstractIterator<T>() {
+    private var results = emptyList<JsonElement>()
+    private var pos = 0
+
+    var page = 0
+        private set
+    var pageJustFetched: Boolean = false
+        private set
+    var pageSize = 0
+        private set
+
+    init {
+        fetchNextPage()
+    }
+
+    private fun fetchNextPage() {
+        page++
+        pos = 0
+        results = fetchPage.invoke(page)
+        pageSize = results.size
+    }
+
+    override fun computeNext() {
+        pageJustFetched = false
+        if (pos == results.size) {
+            fetchNextPage()
+            pageJustFetched = true
+
+            if (results.size == 0) {
+                done()
+                return
+            }
+        }
+        setNext(transform(results[pos++]))
     }
 }
 

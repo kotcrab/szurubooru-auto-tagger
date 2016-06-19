@@ -1,4 +1,5 @@
 config.yaml
+tagMap.yaml
 
 ## Maven
 target/

@@ -50,15 +50,4 @@ class SzurubooruTest {
         assertTrue(tags.size != 0)
         assertTrue(tags.contains("tagme"))
     }
-
-    @Test
-    @Ignore
-    fun batchUpload() {
-//      Szurubooru(getLocalDto()).post("post/2/").ignoreHttpErrors(true).method(Connection.Method.DELETE).execute().body()
-//        val szuru = Szurubooru(getLocalDto())
-//        File("""C:\Users\Kotcrab\Desktop\boorutest""").listFiles().forEach {
-//            println("Upload ${it.name}")
-//            szuru.uploadFile(it, Szurubooru.Safety.Safe, "auto_tagme")
-//        }
-    }
 }

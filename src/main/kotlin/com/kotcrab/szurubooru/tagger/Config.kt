@@ -26,7 +26,6 @@ class SzurubooruDto {
     var dataPath = "http://szurubooru.local/data/"
     var username = "auto-tagger"
     var password = "auto-tagger"
-    var tagEscaping: TagEscapingDto = TagEscapingDto()
 }
 
 class SingleInstanceDto {
@@ -38,8 +37,9 @@ class TagsDto {
     var obtainAliases = true
     var obtainSuggestions = false
     var obtainImplications = true
+    val tagMapFile = "tagMap.yaml"
+    var tagEscaping: TagEscapingDto = TagEscapingDto()
     var ignoreTags: List<String> = ArrayList()
-    var remapTags: List<RemapDto> = ArrayList()
     var remapCategories: List<RemapDto> = ArrayList()
 }
 
@@ -48,6 +48,7 @@ class ConfigDto {
     var managedTag = "auto_tagged"
     var errorTag = "auto_tagger_error"
     var noMatchTag = "tagme"
+    var batchUploadTag = "auto_tagme"
 
     var checkBooruConnectivity = true
     var storeSourceUrl = true

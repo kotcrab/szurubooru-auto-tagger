@@ -4,6 +4,7 @@ import com.github.salomonbrys.kotson.*
 import com.google.gson.JsonElement
 import org.apache.commons.codec.binary.Base64
 import org.jsoup.HttpStatusException
+import java.util.*
 
 /**
  * Simple Danbooru client, only method required for auto-tagger are implemented.
@@ -64,9 +65,14 @@ class Danbooru(private val config: DanbooruDto) {
         return Post(restClient.get(arrayOf(URL, "posts/$id.json")))
     }
 
-    fun getPostNotes(id: Int): List<Note> {
-        return restClient.get(arrayOf(URL, "notes.json", "?group_by=note&search[post_id]=$id")).array.map { Note(it) }
+    private fun fetchNotesPage(id: Int, page: Int): List<JsonElement> {
+        val results = ArrayList<JsonElement>()
+        val json = restClient.get(arrayOf(URL, "notes.json", "?group_by=note&search[post_id]=$id&page=$page")).array
+        json.forEach { results.add(it) }
+        return results
     }
+
+    fun getPostNotes(id: Int): IterablePagedResource<Note> = IterablePagedResource({ fetchNotesPage(id, it) }, { it -> Note(it) })
 
     class Post(val json: JsonElement) {
         val id by lazy { json["id"].int }
@@ -104,7 +110,7 @@ class Danbooru(private val config: DanbooruDto) {
         val y by lazy { json["y"].int }
         val width by lazy { json["width"].int }
         val height by lazy { json["height"].int }
-        val body by lazy { json["body"].string }
+        val body by lazy { json["body"].string.replace("\n", "<br>") }
         val active by lazy { json["is_active"].bool }
     }
 

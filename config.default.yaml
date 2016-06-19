@@ -5,6 +5,7 @@ triggerTag: auto_tagme # Post with this tag will be automatically tagged.
 managedTag: auto_tagged # Post managed by auto-tagger will have this tag.
 errorTag: auto_tagger_error # If some error occurred post will be tagged with this tag - check log for more details
 noMatchTag: tagme # If post can't be found on IQDB it will be tagged with this tag
+batchUploadTag: auto_tagme # Default tag for posts uploaded using batch uploader
 
 checkBooruConnectivity: true # If enabled simple check will be performed to ensuere that auto tagger can connect to Szurubooru and Danbooru
 storeSourceUrl: true # Controls whether to store Danbooru URL in post source field on Szurubooru.
@@ -21,16 +22,17 @@ tags:
   obtainAliases: true
   obtainSuggestions: false # Enabling highly unrecomened, will create many unused tags with little gain
   obtainImplications: true
-  # Warning: Tags under `ignoreTags` and `remapTags` must be entered as visible on Danbooru. Auto tagger might perform tag name escaping
-  # but removing ignored tags and remapping them is performed before escaping.
+  tagMapFile: tagMap.yaml # Path to file where tags mapping will be stored. Path is relative to config file path.
+  tagEscaping:
+    escapeCharacters: '[]{}/\<>=+;@|!?.''' # All those characters in tags names will be replaced with 'escapeWith' string
+    escapeWith: _ # Illegal characters will be replaced by this string
+    ignoreFirstColon: true # Colon (':') by default can be used as first character, if true then first colon will not be escpaed
+    removeLastDot: true # Some Danbooru tags ends with dot ('.'), if enabled then that dot will be removed
+  # Warning: Tags under `ignoreTags` must be entered as visible on Danbooru. Auto tagger might perform tag name escaping
+  # but removing ignored tags is performed before escaping.
 #  ignoreTags:
 #    - test # Tag test will be ignored
 #    - foo
-#  remapTags:
-#    - from: bar # Tag 'bar' will be remapped to 'foo'
-#      to: foo
-#    - from: baz
-#      to: foobar
 #  remapCategories:
 #    # Danbooru has 4 tags categories which can be remapped to any Szurubooru category.
 #    # Eg. category `general` will be remapped to 'default'.
@@ -49,11 +51,6 @@ szurubooru: # Szurubooru configuration
   dataPath: http://szurubooru.local/data/
   username: auto-tagger # Auto-tagger should have its own separate account, make sure it has high enough privileges.
   password: auto-tagger
-  tagEscaping:
-    escapeCharacters: '[]{}/\<>=+;@|!?.''' # All those characters in tags names will be replaced with 'escapeWith' string
-    escapeWith: _ # Illegal characters will be replaced by this string
-    ignoreFirstColon: true # Colon (':') by default can be used as first character, if true then first colon will not be escpaed
-    removeLastDot: true # Some Danbooru tags ends with dot ('.'), if enabled then that dot will be removed
 
 danbooru: # Danbooru configuration
   # Whether to authenticate when sending request to Danbooru, using anonymous mode is not recommend as anonymous
