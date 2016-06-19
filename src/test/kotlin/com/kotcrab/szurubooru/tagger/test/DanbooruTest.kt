@@ -71,5 +71,7 @@ class DanbooruTest {
         assertEquals(danbooru.postIdFromUrl("https://danbooru.donmai.us/posts/2376896"), 2376896)
         assertEquals(danbooru.postIdFromUrl("danbooru.donmai.us/posts/2376896/"), 2376896)
         assertEquals(danbooru.postIdFromUrl("danbooru.donmai.us/posts/2376896"), 2376896)
+        assertEquals(danbooru.postIdFromUrl("https://danbooru.donmai.us/posts/2376896/something"), 2376896)
+        assertEquals(danbooru.postIdFromUrl("danbooru.donmai.us/posts/2376896/something"), 2376896)
     }
 }

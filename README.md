@@ -16,12 +16,13 @@ tag and tag category remapping.
 1. Make sure you have Java 8 installed. 
 2. Get jar from [Releases](https://github.com/kotcrab/szurubooru-auto-tagger/releases) page or build it yourself.
 3. Create separate account for auto-tagger and give it high enough privileges.
-4. On Szurubooru create tag categories: `general`, `artist`, `character`, `copyright`. Note: you can remap any category or tag in config file.
+4. On Szurubooru create tag categories: `general`, `artist`, `character`, `copyright`. Note: you can remap categories in config file.
+Default category should be set to `general` or your custom one.
 4. Create `config.yaml` file. Either override what you need from `config.default.yaml` or copy that file and modify it.
 5. Backup your stuff and run auto-tagger: `java -jar auto-tagger.jar --config /path/to/config/file.yaml`
 
 By default only new posts will be tagged, you can specify different task using `--task` switch. Use `--help` to see list of tasks.
-Except standard tasks used for post tagging, you can also use `BatchUpload` to quickly upload all images file from directory.
+Except standard tasks used for post tagging, you can also use `BatchUpload` to quickly upload all images from directory.
 Note that uploaded images will be moved to `uploaded` subdirectory to simplify upload resuming.
 
 #### Developing

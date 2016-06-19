@@ -7,5 +7,5 @@ fun log(message: Any?) {
 }
 
 fun logErr(message: Any?) {
-    println("Error: $message")
+    System.err.print(message)
 }

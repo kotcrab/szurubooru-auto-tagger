@@ -18,7 +18,7 @@ import java.util.*
 import kotlin.system.exitProcess
 
 /** @author Kotcrab */
-class AutoTagger(private val config: ConfigDto, workingDir: File) {
+class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
     private lateinit var lockSocket: ServerSocket
 
     val danbooru = Danbooru(config.danbooru)
@@ -64,7 +64,7 @@ class AutoTagger(private val config: ConfigDto, workingDir: File) {
     }
 
     fun readTagMap(): HashMap<String, String> {
-        val tagMapFile = File(config.tags.tagMapFile)
+        val tagMapFile = workingDir.child(config.tags.tagMapFile)
         if (tagMapFile.exists()) {
             val tagMap = YamlReader(FileReader(tagMapFile)).read(HashMap::class.java)
             tagMap ?: return HashMap()
@@ -122,7 +122,8 @@ class AutoTagger(private val config: ConfigDto, workingDir: File) {
                         updateTag(reverseTagRemap(it))
                         log("Updated tag $it.")
                     } catch(e: Exception) {
-                        log("Error while updating tag $it.")
+                        logErr("Error while updating tag $it.")
+                        e.printStackTrace()
                     }
                 }
             }
@@ -140,8 +141,13 @@ class AutoTagger(private val config: ConfigDto, workingDir: File) {
                         }
                         log("Found post ${szuruPost.id} match: $sourceImageUrl")
                         val danPost = danbooru.getPost(sourceImageUrl)
-                        updatePostNote(PostSet(szuruPost, danPost))
-                        log("Updated post ${szuruPost.id} notes.")
+                        try {
+                            updatePostNote(PostSet(szuruPost, danPost))
+                            log("Updated post ${szuruPost.id} notes.")
+                        } catch(e: Exception) {
+                            logErr("Error occurred while updating post ${szuruPost.id} notes")
+                            e.printStackTrace()
+                        }
                     }
                 } catch(e: NumberFormatException) {
                     throw IllegalStateException("Post ids must be numbers", e)
@@ -161,9 +167,14 @@ class AutoTagger(private val config: ConfigDto, workingDir: File) {
                 val uploadedDir = sourceDir.child("uploaded")
                 uploadedDir.mkdir()
                 files.forEachIndexed { index, file ->
-                    szurubooru.uploadFile(file, Szurubooru.Safety.Safe, config.batchUploadTag)
-                    Files.move(file.toPath(), uploadedDir.child(file.name).toPath(), StandardCopyOption.REPLACE_EXISTING)
-                    log("Uploaded file ${file.name}. Completed ${index + 1}/${files.size}")
+                    try {
+                        szurubooru.uploadFile(file, Szurubooru.Safety.Safe, config.batchUploadTag)
+                        Files.move(file.toPath(), uploadedDir.child(file.name).toPath(), StandardCopyOption.REPLACE_EXISTING)
+                        log("Uploaded file ${file.name}. Completed ${index + 1}/${files.size}")
+                    } catch(e: Exception) {
+                        logErr("Error occurred while uploading file ${file.name}")
+                        e.printStackTrace()
+                    }
                 }
             }
         }
@@ -175,13 +186,16 @@ class AutoTagger(private val config: ConfigDto, workingDir: File) {
             if (tags.pageJustFetched) {
                 log("Page ${tags.page}, page size ${tags.pageSize}")
             }
-            if (onlyNeverEdited && tag.wasEdited) continue
+            if (onlyNeverEdited && tag.wasEdited) {
+                log("Skipped tag ${tag.name}. Completed ${index + 1}/${tags.pageSize} on current page.")
+                continue
+            }
 
             try {
                 updateTag(reverseTagRemap(tag.name))
                 log("Updated tag ${tag.name}. Completed ${index + 1}/${tags.pageSize} on current page.")
             } catch(e: Exception) {
-                logErr("Error occurred while updating tag $tag")
+                logErr("Error occurred while updating tag ${tag.name}")
                 e.printStackTrace()
             }
         }
@@ -300,7 +314,6 @@ class AutoTagger(private val config: ConfigDto, workingDir: File) {
             szuruNotes.add(note)
         }
         szurubooru.updatePostNotes(szuruPost.id, szuruNotes)
-
     }
 
     private fun updateTags(createdTags: HashSet<TagSet>) {
@@ -325,15 +338,7 @@ class AutoTagger(private val config: ConfigDto, workingDir: File) {
     }
 
     private fun toSzuruTags(tags: List<String>): List<String> {
-        return tags
-                .filterNot { config.tags.ignoreTags.contains(it) }
-                .filterNot { it.startsWith("/") } //all Danbooru tags that starts with / seems to be shortcuts for other tags
-                .map { remapTag(it) }
-                .filter {
-                    val matches = tagNameRegex.matches(it)
-                    if (matches == false) log("Removing invalid tag \"$it\" (did not match server tag name regex)")
-                    matches
-                }
+        return toSzuruTagsMap(tags).map { it.szuruTag }
     }
 
     private fun toSzuruTagsMap(tags: List<String>): List<TagSet> {
@@ -387,11 +392,12 @@ class AutoTagger(private val config: ConfigDto, workingDir: File) {
         for ((danTag, szuruTag) in tagMap) {
             if (szuruTag == szurubooruTag) return TagSet(szuruTag, danTag)
         }
-        throw IllegalStateException("No reverse mapping exists for tag #$szurubooruTag")
+        return TagSet(szurubooruTag, szurubooruTag) //Fallback
     }
 
     private fun htmlToMarkdown(html: String): String {
         var escaped = remark.convert(html)
+        //since Szurubooru can't handle escaped Markdown characters we need to manually replace them with proper HTML entities
         arrayOf("*" to "&#42;",
                 "_" to "&#95;",
                 "{" to "&#123;",

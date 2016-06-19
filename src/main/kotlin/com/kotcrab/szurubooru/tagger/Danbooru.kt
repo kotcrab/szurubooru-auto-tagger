@@ -7,12 +7,14 @@ import org.jsoup.HttpStatusException
 import java.util.*
 
 /**
- * Simple Danbooru client, only method required for auto-tagger are implemented.
+ * Simple Danbooru client, only method and models required for auto-tagger are implemented.
  * @author Kotcrab
  */
 class Danbooru(private val config: DanbooruDto) {
     companion object {
-        val URL = "https://danbooru.donmai.us/"
+        val URL_BASE = "danbooru.donmai.us/"
+        val URL = "https://" + URL_BASE
+        val POSTS_URL = URL_BASE + "posts/"
     }
 
     private val restClient by lazy {
@@ -25,6 +27,10 @@ class Danbooru(private val config: DanbooruDto) {
         }
     }
 
+    /**
+     * Checks if credentials provided in config object are valid
+     * @return true if user is authorized
+     */
     fun isAuthorized(): Boolean {
         if (config.anonymous) {
             return true
@@ -40,13 +46,10 @@ class Danbooru(private val config: DanbooruDto) {
         return true
     }
 
-    fun postIdFromUrl(url: String): Int {
-        val searchString = "danbooru.donmai.us/posts/"
-        val beginIndex = url.indexOf(searchString) + searchString.length
-        val endIndex = url.indexOf('/', beginIndex)
-        return url.substring(beginIndex, if (endIndex == -1) url.length else endIndex).toInt()
-    }
-
+    /**
+     * Query API and get [Tag] resource
+     * @name tag name, as seen on Danbooru
+     */
     fun getTag(name: String): Tag {
         val searchResult = restClient.get(arrayOf(URL, "tags.json", "?search[name_matches]=$name")).array
         if (searchResult.size() == 0) throw IllegalStateException("Query did not match any tag: $name")
@@ -57,12 +60,25 @@ class Danbooru(private val config: DanbooruDto) {
                 restClient.get(arrayOf(URL, "tag_implications.json", "?search[antecedent_name]=$name")))
     }
 
+    /** Query API and get [Post] resource */
     fun getPost(url: String): Post {
         return getPost(postIdFromUrl(url))
     }
 
+    /** Query API and get [Post] resource */
     fun getPost(id: Int): Post {
         return Post(restClient.get(arrayOf(URL, "posts/$id.json")))
+    }
+
+    /**
+     * Extracts post id from Danbooru URL
+     * @param url from which post id will be extracted
+     * @return extracted post id
+     */
+    fun postIdFromUrl(url: String): Int {
+        val beginIndex = url.indexOf(POSTS_URL) + POSTS_URL.length
+        val endIndex = url.indexOf('/', beginIndex)
+        return url.substring(beginIndex, if (endIndex == -1) url.length else endIndex).toInt()
     }
 
     private fun fetchNotesPage(id: Int, page: Int): List<JsonElement> {
@@ -72,8 +88,11 @@ class Danbooru(private val config: DanbooruDto) {
         return results
     }
 
+
+    /** Query API and get [Note] resources. [IterablePagedResource] is used for seamless page fetching. */
     fun getPostNotes(id: Int): IterablePagedResource<Note> = IterablePagedResource({ fetchNotesPage(id, it) }, { it -> Note(it) })
 
+    /** Post model. */
     class Post(val json: JsonElement) {
         val id by lazy { json["id"].int }
         val artistTags by lazy { getTags("tag_string_artist") }
@@ -91,6 +110,7 @@ class Danbooru(private val config: DanbooruDto) {
         }
     }
 
+    /** Tag model. */
     class Tag(val json: JsonElement, val aliasesJson: JsonElement, val implicationsJson: JsonElement) {
         val name by lazy { json["name"].string }
         val category by lazy { TagCategory.fromDanbooruId(json["category"].int) }
@@ -105,6 +125,7 @@ class Danbooru(private val config: DanbooruDto) {
         val implications by lazy { implicationsJson.array.map { it["consequent_name"].string } }
     }
 
+    /** Note model. */
     class Note(val json: JsonElement) {
         val x by lazy { json["x"].int }
         val y by lazy { json["y"].int }
@@ -114,6 +135,7 @@ class Danbooru(private val config: DanbooruDto) {
         val active by lazy { json["is_active"].bool }
     }
 
+    /** Possible Danbooru tag categories. */
     enum class TagCategory(val danbooruId: Int, val remapName: String) {
         General(0, "general"),
         Artist(1, "artist"),
@@ -131,6 +153,7 @@ class Danbooru(private val config: DanbooruDto) {
         }
     }
 
+    /** Possible Danbooru ratings. */
     enum class Rating(val danbooruId: String) {
         Explicit("e"),
         Questionable("q"),
