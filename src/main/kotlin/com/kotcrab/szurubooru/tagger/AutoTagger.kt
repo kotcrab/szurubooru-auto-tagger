@@ -437,8 +437,8 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
         return File(this, path)
     }
 
-    class TagSet(val szuruTag: String, val danTag: String)
-    class PostSet(val szuruPost: Szurubooru.Post, val danPost: Danbooru.Post)
+    data class TagSet(val szuruTag: String, val danTag: String)
+    data class PostSet(val szuruPost: Szurubooru.Post, val danPost: Danbooru.Post)
 
     enum class Task(val description: String, val hasArgument: Boolean = false) {
         NewPosts("Updates new posts (having config.triggerTag)"),
