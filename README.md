@@ -25,7 +25,7 @@ By default only new posts will be tagged, you can specify different task using `
 Except standard tasks used for post tagging, you can also use `BatchUpload` to quickly upload all images from directory.
 Note that uploaded images will be moved to `uploaded` subdirectory to simplify upload resuming.
 
-### Help message
+#### Help message
 Result of `java -jar auto-tagger.jar --help`
 ```
 Szurubooru auto tagger. Usage: [-c config-file-path] [-t task task-argument1 task-argument2 task-argument3 ...]
