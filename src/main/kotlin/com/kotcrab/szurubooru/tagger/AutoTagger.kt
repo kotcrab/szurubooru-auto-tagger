@@ -63,6 +63,7 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
                 "Make sure they exist or modify tag category remapping configuration.")
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun readTagMap(): HashMap<String, String> {
         val tagMapFile = workingDir.child(config.tags.tagMapFile)
         if (tagMapFile.exists()) {
@@ -178,6 +179,7 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
                 }
             }
         }
+        log("Done.")
     }
 
     private fun runForAllTags(onlyNeverEdited: Boolean) {
@@ -414,7 +416,7 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
                 "\\" to "&#92;",
                 "`" to "&#96;")
                 .forEach { escaped = escaped.replace("\\" + it.first, it.second) }
-        return escaped.replace("<tn>", "\n\n*").replace("<tn/>", "*")
+        return escaped.replace("<tn>", "\n\n*").replace("<tn/>", "*").replace("</tn>", "*")
     }
 
     private fun escapeTagName(danbooruTag: String): String {

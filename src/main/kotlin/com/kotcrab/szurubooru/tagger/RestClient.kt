@@ -16,7 +16,8 @@ import java.util.concurrent.TimeUnit
 /**
  * [Jsoup] wrapper. [Jsoup] is originally designed to parsing website HTML but even using it for querying REST APIs
  * is very convenient.
- * @author Kotcrab */
+ * @author Kotcrab
+ */
 class RestClient(private val basicHttpAuth: String? = null, private val requestsPerHour: Int = -1) {
     companion object {
         val NORMAL_TIMEOUT = TimeUnit.SECONDS.toMillis(3).toInt()
