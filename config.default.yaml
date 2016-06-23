@@ -24,7 +24,7 @@ tags:
   obtainImplications: true
   tagMapFile: tagMap.yaml # Path to file where tags mapping will be stored. Path is relative to config file path.
   tagEscaping:
-    escapeCharacters: '[]{}/\<>=+;@|!?.''' # All those characters in tags names will be replaced with 'escapeWith' string
+    escapeCharacters: '/+' # All those characters in tags names will be replaced with 'escapeWith' string
     escapeWith: _ # Illegal characters will be replaced by this string
     ignoreFirstColon: true # Colon (':') by default can be used as first character, if true then first colon will not be escaped
     removeLastDot: true # Some Danbooru tags ends with dot ('.'), if enabled then that dot will be removed
