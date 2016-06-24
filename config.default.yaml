@@ -26,8 +26,6 @@ tags:
   tagEscaping:
     escapeCharacters: '/+' # All those characters in tags names will be replaced with 'escapeWith' string
     escapeWith: _ # Illegal characters will be replaced by this string
-    ignoreFirstColon: true # Colon (':') by default can be used as first character, if true then first colon will not be escaped
-    removeLastDot: true # Some Danbooru tags ends with dot ('.'), if enabled then that dot will be removed
   # Warning: Tags under `ignoreTags` must be entered as visible on Danbooru. Auto tagger might perform tag name escaping
   # but removing ignored tags is performed before escaping.
 #  ignoreTags:

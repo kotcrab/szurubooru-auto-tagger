@@ -23,10 +23,8 @@ class DanbooruDto {
 
 /** Tag escaping configuration. */
 class TagEscapingDto {
-    var escapeCharacters = "[]{}/\\<>=+;@|!?.'"
+    var escapeCharacters = "/+"
     var escapeWith = "_"
-    var ignoreFirstColon = true
-    var removeLastDot = true
 }
 
 /** Szurubooru configuration. */

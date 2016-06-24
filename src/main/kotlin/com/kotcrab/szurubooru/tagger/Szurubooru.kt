@@ -84,7 +84,7 @@ class Szurubooru(private val config: SzurubooruDto) {
     fun searchPostOnIqdb(post: Post): String? {
         if (post.isImage() == false) throw IllegalArgumentException("Post must be an image")
         val imageFile = createTempFile()
-        imageFile.writeBytes(Jsoup.connect(post.contentUrl).timeout(30 * 1000)
+        imageFile.writeBytes(Jsoup.connect(post.contentUrl).timeout(30 * 1000).maxBodySize(0)
                 .ignoreContentType(true).execute().bodyAsBytes())
         val sourceImageUrl = queryIqdb(imageFile)
         imageFile.delete()
@@ -144,6 +144,7 @@ class Szurubooru(private val config: SzurubooruDto) {
     class Post(val json: JsonElement) {
         val id by lazy { json["id"].int }
         val contentUrl by lazy { json["contentUrl"].string }
+        val mimeType by lazy { json["mimeType"].string }
         val tags by lazy { json["tags"].array.map { it.string } }
         val safety by lazy { Safety.fromSzurubooruId(json["safety"].string) }
 

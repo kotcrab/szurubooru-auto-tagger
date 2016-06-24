@@ -7,5 +7,5 @@ fun log(message: Any?) {
 }
 
 fun logErr(message: Any?) {
-    System.err.print(message)
+    System.err.println(message)
 }

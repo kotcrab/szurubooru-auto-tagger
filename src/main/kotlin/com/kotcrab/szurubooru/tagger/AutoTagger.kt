@@ -8,11 +8,13 @@ import com.google.gson.JsonObject
 import com.overzealous.remark.IgnoredHtmlElement
 import com.overzealous.remark.Options
 import com.overzealous.remark.Remark
+import org.jsoup.Jsoup
 import java.io.*
 import java.net.BindException
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.nio.file.Files
+import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.util.*
 import kotlin.system.exitProcess
@@ -29,6 +31,16 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
         options.getIgnoredHtmlElements().add(IgnoredHtmlElement.create("tn"))
         Remark(options)
     }
+
+    val mimeTypeExtensionMap = mapOf(
+            "image/gif" to "gif",
+            "image/jpeg" to "jpg",
+            "image/png" to "png",
+            "image/x-png" to "png",
+            "image/bmp" to "bmp",
+            "image/x-windows-bmp" to "bmp",
+            "image/tiff" to "tiff"
+    )
 
     lateinit var szuruTags: List<String>
     lateinit var szuruTagCategories: List<String>
@@ -174,6 +186,38 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
                         log("Uploaded file ${file.name}. Completed ${index + 1}/${files.size}")
                     } catch(e: Exception) {
                         logErr("Error occurred while uploading file ${file.name}")
+                        e.printStackTrace()
+                    }
+                }
+            }
+            Task.BatchDownload -> {
+                if (taskArguments == null) throw IllegalStateException("You must search query and optionally output directory")
+                val query = taskArguments.first()
+                val posts = szurubooru.iterablePosts(query)
+                if (posts.hasNext() == false) {
+                    log("No files to download matching query: `$query`")
+                    return
+                }
+                val output = if (taskArguments.size > 1) File(taskArguments[1]) else Paths.get("").toFile().child("batchDownloader")
+                output.mkdirs()
+                log("Downloading to ${output.absolutePath}")
+                posts.forEach { post ->
+                    if (posts.pageJustFetched) {
+                        log("Page ${posts.page}, page size ${posts.pageSize}")
+                    }
+
+                    try {
+                        val extension = mimeTypeExtensionMap[post.mimeType]
+                        if (extension == null) {
+                            log("Ignoring ${post.id}, extension for image type ${post.mimeType} is unknown")
+                            return@forEach
+                        }
+                        val outFile = output.child("${post.id} - ${post.safety.toString().substring(0, 1).toLowerCase()} - ${post.tags.joinToString(limit = 5)}.$extension")
+                        outFile.writeBytes(Jsoup.connect(post.contentUrl).maxBodySize(0).timeout(30 * 1000)
+                                .ignoreContentType(true).execute().bodyAsBytes())
+                        log("Downloaded post ${post.id}")
+                    } catch(e: Exception) {
+                        logErr("Error occurred while downloading post ${post.id}")
                         e.printStackTrace()
                     }
                 }
@@ -422,16 +466,7 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
     private fun escapeTagName(danbooruTag: String): String {
         val tagEscaping = config.tags.tagEscaping
         var escapedName = danbooruTag
-        if (tagEscaping.removeLastDot && escapedName.endsWith(".")) {
-            escapedName.substring(0, escapedName.length - 1)
-        }
-
         tagEscaping.escapeCharacters.forEach { escapedName = escapedName.replace(it.toString(), tagEscaping.escapeWith) }
-
-        if (tagEscaping.ignoreFirstColon) {
-            escapedName = escapedName.substring(0, 1).plus(escapedName.substring(1).replace(":", tagEscaping.escapeWith)) //: is supported as first character
-        }
-
         return escapedName
     }
 
@@ -451,6 +486,7 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
         Tags ("Updates single tag, you must specify tag names: Tags <tagName1> [tagName2] [tagName3] ...", true),
         Notes ("Updates post notes only, you must specify post ids: Notes <postId1> [postId2] [postId3] ...", true),
         BatchUpload ("Upload all image files from given directory. You must specify path to source directory: BatchUpload <path>. " +
-                "Warning: Uploaded images will be moved to 'uploaded' subdirectory to simplify upload resuming.", true)
+                "Warning: Uploaded images will be moved to 'uploaded' subdirectory to simplify upload resuming.", true),
+        BatchDownload ("Download all images matching search query. You must specify query and optionally output directory: BatchDownload <searchQuery> [outputPath]. ", true)
     }
 }
