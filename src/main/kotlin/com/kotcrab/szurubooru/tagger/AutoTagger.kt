@@ -98,7 +98,7 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
             Task.NewPosts -> {
                 val newPosts = szurubooru.pagedPosts(config.triggerTag).toList()
                 log("There are ${newPosts.size} posts that needs to be tagged")
-                runForPosts(newPosts)
+                runForPosts(newPosts, true)
             }
 
             Task.ExistingPosts -> {
@@ -106,14 +106,14 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
                 log("Updating tags of existing posts.")
                 managedPosts.forEachPage {
                     log("Page ${managedPosts.page}, page size ${it.size}")
-                    runForPosts(it)
+                    runForPosts(it, false)
                 }
             }
 
             Task.Posts -> {
                 if (taskArguments == null) throw IllegalStateException("You must specify post id for selected task")
                 try {
-                    runForPosts(taskArguments.map { szurubooru.getPost(it.toInt()) })
+                    runForPosts(taskArguments.map { szurubooru.getPost(it.toInt()) }, false)
                 } catch(e: NumberFormatException) {
                     throw IllegalStateException("Post ids must be numbers", e)
                 }
@@ -247,20 +247,20 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
         }
     }
 
-    private fun runForPosts(posts: List<Szurubooru.Post>) {
+    private fun runForPosts(posts: List<Szurubooru.Post>, newPostsOnly: Boolean) {
         val createdTags = HashSet<TagSet>()
         val postsToBeNoted = ArrayList<PostSet>()
-        updatePostsTags(posts, postsToBeNoted, createdTags)
+        updatePostsTags(posts, postsToBeNoted, createdTags, newPostsOnly)
         saveTagMap()
         updatePostsNotes(postsToBeNoted)
         updateTags(createdTags)
         saveTagMap()
     }
 
-    private fun updatePostsTags(posts: List<Szurubooru.Post>, postsToBeNoted: ArrayList<PostSet>, createdTags: HashSet<TagSet>) {
+    private fun updatePostsTags(posts: List<Szurubooru.Post>, postsToBeNoted: ArrayList<PostSet>, createdTags: HashSet<TagSet>, newPostsOnly: Boolean) {
         posts.forEachIndexed { i, post ->
             try {
-                updatePostTags(post, postsToBeNoted, createdTags)
+                updatePostTags(post, postsToBeNoted, createdTags, newPostsOnly)
                 log("Updated post ${post.id} tags. Completed ${i + 1}/${posts.size}.")
             } catch(e: Exception) {
                 logErr("Error occurred while updating post ${post.id} tags")
@@ -276,14 +276,20 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
         }
     }
 
-    private fun updatePostTags(post: Szurubooru.Post, postsToBeNoted: ArrayList<PostSet>, createdTags: HashSet<TagSet>) {
+    private fun updatePostTags(post: Szurubooru.Post, postsToBeNoted: ArrayList<PostSet>, createdTags: HashSet<TagSet>, newPostsOnly: Boolean) {
         if (post.isImage() == false) {
             logErr("Post ${post.id} is not an image.")
             replacePostTriggerTag(post, config.errorTag)
             return
         }
 
-        val sourceImageUrl = searchPostOnIqdb(post)
+        val sourceImageUrl: String?;
+        if (newPostsOnly || config.storeSourceUrl == false || post.source.contains(Danbooru.URL_BASE) == false) {
+            sourceImageUrl = searchPostOnIqdb(post)
+        } else {
+            log("Using stored source URL for post ${post.id}: ${post.source}")
+            sourceImageUrl = post.source
+        }
         sourceImageUrl ?: return
 
         val danPost = danbooru.getPost(sourceImageUrl)
@@ -301,6 +307,13 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
         }
 
         szurubooru.updatePostTags(post.id, *toSzuruTags(danPost.tags).plus(config.managedTag).toTypedArray())
+
+        if (config.createCommentWhenBiggerImageFound && newPostsOnly) {
+            if (danPost.width > post.width || danPost.height > post.height) {
+                szurubooru.createPostComment(post, "Bigger version of this image was found on [Danbooru](${danPost.getUrl()}).")
+                log("Found bigger version of post ${post.id}, created comment.")
+            }
+        }
     }
 
     private fun searchPostOnIqdb(post: Szurubooru.Post): String? {

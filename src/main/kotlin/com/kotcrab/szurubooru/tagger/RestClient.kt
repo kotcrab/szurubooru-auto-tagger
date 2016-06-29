@@ -43,6 +43,12 @@ class RestClient(private val basicHttpAuth: String? = null, private val requests
         return request.executeSafely()
     }
 
+    fun post(requestUrl: Array<String>, json: String, timeout: Int = LONG_TIMEOUT): String {
+        val request = request(requestUrl.join(), Connection.Method.POST, timeout)
+        request.requestBody(json)
+        return request.executeSafely()
+    }
+
     fun put(requestUrl: Array<String>, json: JsonObject, timeout: Int = NORMAL_TIMEOUT): String {
         return request(requestUrl.join(), Connection.Method.PUT, timeout).requestBody(json.toString()).executeSafely()
     }

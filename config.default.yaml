@@ -11,6 +11,7 @@ checkBooruConnectivity: true # If enabled simple check will be performed to ensu
 storeSourceUrl: true # Controls whether to store Danbooru URL in post source field on Szurubooru.
 updateImageRating: true # If true then post rating (safe, questionable, explicit) will be updated from Danbooru.
 updateImageNotes: true # If true then post notes will be obtained from Danbooru
+createCommentWhenBiggerImageFound: true # If true then auto tagger will create comment with a link to image in higher resolution (new posts only)
 
 singleInstance: # Ensures that only single instance of auto tagger is running.
   enabled: true

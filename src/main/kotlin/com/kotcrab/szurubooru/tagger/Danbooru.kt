@@ -105,6 +105,10 @@ class Danbooru(private val config: DanbooruDto) {
         val height by lazy { json["image_height"].int }
         val hasNotes by lazy { !json["last_noted_at"].isJsonNull }
 
+        fun getUrl(): String {
+            return URL + "posts/$id"
+        }
+
         private fun getTags(elementName: String): List<String> {
             return json[elementName].string.split(" ")
         }

@@ -63,6 +63,7 @@ class ConfigDto {
     var storeSourceUrl = true
     var updateImageRating = true
     var updateImageNotes = true
+    var createCommentWhenBiggerImageFound = true
 
     var tags = TagsDto()
     var singleInstance = SingleInstanceDto()

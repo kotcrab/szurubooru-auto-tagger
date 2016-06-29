@@ -77,6 +77,13 @@ class Szurubooru(private val config: SzurubooruDto) {
         inputStream.close()
     }
 
+    fun createPostComment(post: Post, text: String) {
+        val json = jsonObject(
+                "postId" to post.id,
+                "text" to text).toString()
+        restClient.post(arrayOf(config.apiPath, "comments"), json)
+    }
+
     fun getPost(id: Int): Post {
         return Post(restClient.get(arrayOf(config.apiPath, "post/$id")))
     }
@@ -147,6 +154,9 @@ class Szurubooru(private val config: SzurubooruDto) {
         val mimeType by lazy { json["mimeType"].string }
         val tags by lazy { json["tags"].array.map { it.string } }
         val safety by lazy { Safety.fromSzurubooruId(json["safety"].string) }
+        val width by lazy { json["canvasWidth"].int }
+        val height by lazy { json["canvasHeight"].int }
+        val source by lazy { json["source"].string }
 
         fun isImage(): Boolean {
             return json["type"].string == "image"
