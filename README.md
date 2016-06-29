@@ -30,16 +30,16 @@ Result of `java -jar auto-tagger.jar --help`
 ```
 Szurubooru auto tagger. Usage: [-c config-file-path] [-t task task-argument1 task-argument2 task-argument3 ...]
 config-file-path: (-c, --config) Path to configuration file. If not specified config.yaml is used or config.default.yaml if former does not exist.
-task: (-t, --task) Optional, task that auto tagger will perform. By default 'NewPosts' is used. This parameter can be:
-        NewPosts - Updates new posts (having config.triggerTag)
-        ExistingPosts - Updates already tagged posts (having config.managedTag)
-        NewTags - Updates tags that weren't ever updated
-        ExistingTags - Updates existing tags
-        Posts - Updates specified posts, you must specify post ids: Posts <postId1> [postId2] [postId3] ...
-        Tags - Updates single tag, you must specify tag names: Tags <tagName1> [tagName2] [tagName3] ...
-        Notes - Updates post notes only, you must specify post ids: Notes <postId1> [postId2] [postId3] ...
-        BatchUpload - Upload all image files from given directory. You must specify path to source directory: BatchUpload <path>. 
-          Warning: Uploaded images will be moved to 'uploaded' subdirectory to simplify upload resuming.
+task: (-t, --task) Optional, task that auto tagger will perform. By default 'NewPosts' is used. This parameter can be: 
+	NewPosts - Updates new posts (having config.triggerTag)
+	ExistingPosts - Updates already tagged posts (having config.managedTag)
+	NewTags - Updates tags that weren't ever updated
+	ExistingTags - Updates existing tags
+	Posts - Updates specified posts, you must specify post ids: Posts <postId1> [postId2] [postId3] ...
+	Tags - Updates specified tags, you must specify tag names: Tags <tagName1> [tagName2] [tagName3] ...
+	Notes - Updates specified post notes only, you must specify post ids: Notes <postId1> [postId2] [postId3] ...
+	BatchUpload - Upload all image files from given directory. You must specify path to source directory: BatchUpload <path>. Warning: Uploaded images will be moved to 'uploaded' subdirectory to simplify upload resuming.
+	BatchDownload - Download all images matching search query. You must specify query and optionally output directory: BatchDownload <searchQuery> [outputPath]. 
 task-arguments: Optional, only needed if tasks requires passing argument. Must be specified as last config parameter
 ```
 
