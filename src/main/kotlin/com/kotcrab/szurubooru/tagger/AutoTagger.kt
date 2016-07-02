@@ -237,6 +237,11 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
                 continue
             }
 
+            if (config.tags.ignoreTags.contains(tag.name)) {
+                log("Skipped tag ${tag.name} (tag is on ignore list). Completed ${index + 1}/${tags.pageSize} on current page.")
+                continue
+            }
+
             try {
                 updateTag(reverseTagRemap(tag.name))
                 log("Updated tag ${tag.name}. Completed ${index + 1}/${tags.pageSize} on current page.")
