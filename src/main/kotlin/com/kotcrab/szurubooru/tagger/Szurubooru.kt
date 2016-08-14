@@ -58,6 +58,10 @@ class Szurubooru(private val config: SzurubooruDto) {
         return list
     }
 
+    fun getTag(name: String): Tag {
+        return Tag(restClient.get(arrayOf(config.apiPath, "tag/$name")))
+    }
+
     fun getInfo(): Info {
         return Info(restClient.get(arrayOf(config.apiPath, "info")))
     }
@@ -98,34 +102,38 @@ class Szurubooru(private val config: SzurubooruDto) {
         return sourceImageUrl
     }
 
-    fun updatePostSafety(id: Int, safety: Safety) {
+    fun updatePostSafety(post: Post, safety: Safety) {
         val json = jsonObject("safety" to safety.szurubooruName)
-        updatePostData(id, json)
+        updatePostData(post, json)
     }
 
-    fun updatePostTags(id: Int, vararg tags: String) {
+    fun updatePostTags(post: Post, vararg tags: String) {
         val json = jsonObject("tags" to jsonArray(*tags))
-        updatePostData(id, json)
+        updatePostData(post, json)
     }
 
-    fun updatePostSource(id: Int, source: String) {
+    fun updatePostSource(post: Post, source: String) {
         val json = jsonObject("source" to source)
-        updatePostData(id, json)
+        updatePostData(post, json)
     }
 
-    fun updatePostNotes(id: Int, notes: List<JsonObject>) {
+    fun updatePostNotes(post: Post, notes: List<JsonObject>) {
         val json = jsonObject("notes" to jsonArray(*notes.toTypedArray()))
-        updatePostData(id, json)
+        updatePostData(post, json)
     }
 
-    private fun updatePostData(id: Int, json: JsonObject) {
-        restClient.put(arrayOf(config.apiPath, "post/$id"), json)
+    private fun updatePostData(post: Post, json: JsonObject) {
+        json += "version" to post.version
+        restClient.put(arrayOf(config.apiPath, "post/${post.id}"), json)
+        post.version++
     }
 
     fun updateTag(name: String, category: String, aliases: List<String>, implications: List<String>, suggestions: List<String>) {
+        val version = getTag(name).version
         val json = jsonObject(
                 "names" to jsonArray(name, *aliases.minus(name).toTypedArray()),
-                "category" to category
+                "category" to category,
+                "version" to version
         )
 
         if (implications.size != 0) json += "implications" to jsonArray(*implications.minus(name).toTypedArray())
@@ -157,6 +165,7 @@ class Szurubooru(private val config: SzurubooruDto) {
         val width by lazy { json["canvasWidth"].int }
         val height by lazy { json["canvasHeight"].int }
         val source by lazy { json["source"].string }
+        var version = json["version"].int
 
         fun isImage(): Boolean {
             return json["type"].string == "image"
@@ -166,6 +175,7 @@ class Szurubooru(private val config: SzurubooruDto) {
     class Tag(val json: JsonElement) {
         val name by lazy { json["names"].array.first().string }
         val wasEdited by lazy { !json["lastEditTime"].isJsonNull }
+        val version by lazy { json["version"].int }
     }
 
     class Info(val json: JsonElement) {

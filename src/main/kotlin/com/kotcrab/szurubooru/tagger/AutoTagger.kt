@@ -288,7 +288,7 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
             return
         }
 
-        val sourceImageUrl: String?;
+        val sourceImageUrl: String?
         if (newPostsOnly || config.storeSourceUrl == false || post.source.contains(Danbooru.URL_BASE) == false) {
             sourceImageUrl = searchPostOnIqdb(post)
         } else {
@@ -299,7 +299,7 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
 
         val danPost = danbooru.getPost(sourceImageUrl)
         if (config.updateImageRating) {
-            szurubooru.updatePostSafety(post.id, danPost.rating.toSzurubooruSafety())
+            szurubooru.updatePostSafety(post, danPost.rating.toSzurubooruSafety())
             log("Updated post ${post.id} safety to ${danPost.rating}")
         }
         if (config.updateImageNotes && danPost.hasNotes) {
@@ -311,7 +311,7 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
             if (szuruTags.contains(it.szuruTag) == false) createdTags.add(it)
         }
 
-        szurubooru.updatePostTags(post.id, *toSzuruTags(danPost.tags).plus(config.managedTag).toTypedArray())
+        szurubooru.updatePostTags(post, *toSzuruTags(danPost.tags).plus(config.managedTag).toTypedArray())
 
         if (config.createCommentWhenBiggerImageFound && newPostsOnly) {
             if (danPost.width > post.width || danPost.height > post.height) {
@@ -331,7 +331,7 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
         } else {
             log("Found post ${post.id} match: $sourceImageUrl")
             if (config.storeSourceUrl) {
-                szurubooru.updatePostSource(post.id, sourceImageUrl)
+                szurubooru.updatePostSource(post, sourceImageUrl)
                 log("Updated post ${post.id} source")
             }
         }
@@ -377,7 +377,7 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
             )
             szuruNotes.add(note)
         }
-        szurubooru.updatePostNotes(szuruPost.id, szuruNotes)
+        szurubooru.updatePostNotes(szuruPost, szuruNotes)
     }
 
     private fun updateTags(createdTags: HashSet<TagSet>) {
@@ -427,7 +427,7 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
 
     private fun replacePostTriggerTag(post: Szurubooru.Post, newTag: String) {
         val newTagsList = post.tags.minus(config.triggerTag).plus(newTag)
-        szurubooru.updatePostTags(post.id, *newTagsList.toTypedArray())
+        szurubooru.updatePostTags(post, *newTagsList.toTypedArray())
     }
 
     fun dispose() {
