@@ -54,7 +54,7 @@ class RestClient(private val basicHttpAuth: String? = null, private val requests
     }
 
     private fun request(url: String, method: Connection.Method, timeout: Int): Connection {
-        val request = Jsoup.connect(url).validateTLSCertificates(false).ignoreHttpErrors(true).ignoreContentType(true)
+        val request = Jsoup.connect(url).validateTLSCertificates(false).ignoreHttpErrors(true).ignoreContentType(true).header("Accept", "application/json")
                 .method(method).timeout(timeout)
         if (basicHttpAuth != null) request.header("Authorization", "Basic $basicHttpAuth")
         return request
