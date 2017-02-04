@@ -47,3 +47,7 @@ task zip(dependsOn: jar, type: Zip) {
     from { configurations.runtime.allArtifacts.files }
     into(project.name + '-' + project.version)
 }
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.1'
+}
