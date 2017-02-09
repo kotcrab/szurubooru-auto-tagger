@@ -8,7 +8,7 @@ import kotlin.system.exitProcess
 /** @author Kotcrab */
 
 fun main(args: Array<String>) {
-    var configPath: String? = null
+    var argConfigPath: String? = null
     var task: AutoTagger.Task = AutoTagger.Task.NewPosts
     var taskArguments: List<String>? = null
 
@@ -20,7 +20,7 @@ fun main(args: Array<String>) {
 
         if ((arg == "-c" || arg == "--config")) {
             if (i + 1 >= args.size) throw IllegalStateException("You must specify config file path")
-            configPath = args[i + 1]
+            argConfigPath = args[i + 1]
             return@forEachIndexed
         }
 
@@ -35,21 +35,24 @@ fun main(args: Array<String>) {
         }
     }
 
-    if (configPath == null) {
-        configPath = "config.yaml"
-        if (File(configPath).exists() == false)
-            configPath = "config.default.yaml"
+    if (argConfigPath != null && !File(argConfigPath).exists()) {
+        log("Config file $argConfigPath does not exist.")
+        return
     }
 
-    if (File(configPath).exists() == false) {
-        log("Config file '$configPath' does not exist.")
+    val jarPath = JarUtils.getJarPath(AutoTagger::class.java);
+    val configPaths = arrayOf(argConfigPath, "config.yaml", "config.default.yaml", "${jarPath}config.yaml", "${jarPath}config.default.yaml")
+    val configPath: String? = configPaths.firstOrNull { it != null && File(it).exists() }
+
+    if (configPath == null) {
+        log("Config file does not exist.")
         return
     }
 
     log("Szurubooru auto tagger")
     log("Using config from $configPath")
 
-    val autoTagger = AutoTagger(loadConfig(configPath as String), File(configPath).absoluteFile.parentFile)
+    val autoTagger = AutoTagger(loadConfig(configPath), File(configPath).absoluteFile.parentFile)
     autoTagger.run(task, taskArguments)
     autoTagger.dispose()
 }
