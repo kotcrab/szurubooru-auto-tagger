@@ -42,11 +42,11 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
             "image/tiff" to "tiff"
     )
 
-    lateinit var szuruTags: List<String>
-    lateinit var szuruTagCategories: List<String>
-    lateinit var tagNameRegex: Regex
+    var szuruTags: List<String>
+    var szuruTagCategories: List<String>
+    var tagNameRegex: Regex
 
-    lateinit var tagMap: HashMap<String, String>
+    var tagMap: HashMap<String, String>
 
     init {
         if (config.singleInstance.enabled) {

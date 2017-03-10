@@ -145,7 +145,8 @@ class Szurubooru(private val config: SzurubooruDto) {
 
     private fun fetchPage(baseUrl: String, page: Int, query: String): List<JsonElement> {
         val results = ArrayList<JsonElement>()
-        val json = restClient.get(arrayOf(config.apiPath, baseUrl, "?page=$page&pageSize=100&query=$query"))["results"].array
+        val pageSize = 100
+        val json = restClient.get(arrayOf(config.apiPath, baseUrl, "?offset=${pageSize * page}&limit=$pageSize&query=$query"))["results"].array
         json.forEach { results.add(it) }
         return results
     }

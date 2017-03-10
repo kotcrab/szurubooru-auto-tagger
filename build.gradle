@@ -2,7 +2,7 @@ group 'com.kotcrab.szurubootu.autotagger'
 project.version = '1.2'
 
 buildscript {
-    ext.kotlinVersion = '1.0.3'
+    ext.kotlinVersion = '1.1.0'
     repositories {
         mavenCentral()
     }

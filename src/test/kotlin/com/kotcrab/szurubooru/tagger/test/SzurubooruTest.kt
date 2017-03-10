@@ -50,4 +50,9 @@ class SzurubooruTest {
         assertTrue(tags.size != 0)
         assertTrue(tags.contains("tagme"))
     }
+
+    @Test
+    fun testPagedPosts() {
+        assertFalse(Szurubooru(SzurubooruDto()).pagedPosts("auto_tagged").toList().isEmpty())
+    }
 }

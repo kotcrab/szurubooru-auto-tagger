@@ -122,7 +122,7 @@ class Danbooru(private val config: DanbooruDto) {
         val relatedTags by lazy {
             json["related_tags"].string.split(" ")
                     .drop(2) //first two elements are *this* tag and '1'
-                    .filterIndexed { index, s -> index % 2 == 0 } //after each tag numeric value is stored which is not needed
+                    .filterIndexed { index, _ -> index % 2 == 0 } //after each tag numeric value is stored which is not needed
         }
 
         val aliases by lazy { aliasesJson.array.map { it["antecedent_name"].string } }

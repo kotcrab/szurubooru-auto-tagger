@@ -105,7 +105,7 @@ class RestClient(private val basicHttpAuth: String? = null, private val requests
 /** @param fetchPage fetch next page and return list of json elements, Int is page number */
 class PagedResource<T>(val fetchPage: (Int) -> List<JsonElement>, val transform: (JsonElement) -> T) {
     var results = emptyList<T>()
-    var page = 0
+    var page = -1
         private set
     var done = false
         private set
