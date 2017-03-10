@@ -1,5 +1,5 @@
 group 'com.kotcrab.szurubootu.autotagger'
-project.version = '1.2'
+project.version = '1.3'
 
 buildscript {
     ext.kotlinVersion = '1.1.0'
