@@ -2,7 +2,7 @@ group 'com.kotcrab.szurubootu.autotagger'
 project.version = '1.3'
 
 buildscript {
-    ext.kotlinVersion = '1.1.0'
+    ext.kotlinVersion = '1.3.72'
     repositories {
         mavenCentral()
     }
@@ -48,10 +48,6 @@ task zip(dependsOn: jar, type: Zip) {
     from { "config.default.yaml" }
     from { configurations.runtime.allArtifacts.files }
     into(project.name + '-' + project.version)
-}
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '3.1'
 }
 
 distributions {

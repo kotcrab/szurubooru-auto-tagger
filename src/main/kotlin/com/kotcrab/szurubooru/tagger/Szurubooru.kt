@@ -51,8 +51,8 @@ class Szurubooru(private val config: SzurubooruDto) {
     }
 
     fun getTags(): List<String> {
-        val json = restClient.get(arrayOf(config.dataPath, "tags.json"))
-        val list = json["tags"].array.flatMap {
+        val json = restClient.get(arrayOf(config.apiPath, "tags"))
+        val list = json["results"].array.flatMap {
             it["names"].array.map { it.string }
         }
         return list
@@ -95,7 +95,7 @@ class Szurubooru(private val config: SzurubooruDto) {
     fun searchPostOnIqdb(post: Post): String? {
         if (post.isImage() == false) throw IllegalArgumentException("Post must be an image")
         val imageFile = createTempFile()
-        imageFile.writeBytes(Jsoup.connect(post.contentUrl).timeout(30 * 1000).maxBodySize(0)
+        imageFile.writeBytes(Jsoup.connect(config.dataPath + post.contentUrl).timeout(30 * 1000).maxBodySize(0)
                 .ignoreContentType(true).execute().bodyAsBytes())
         val sourceImageUrl = queryIqdb(imageFile)
         imageFile.delete()
@@ -161,7 +161,7 @@ class Szurubooru(private val config: SzurubooruDto) {
         val id by lazy { json["id"].int }
         val contentUrl by lazy { json["contentUrl"].string }
         val mimeType by lazy { json["mimeType"].string }
-        val tags by lazy { json["tags"].array.map { it.string } }
+        val tags by lazy { json["tags"].array.map { it["names"].string } }
         val safety by lazy { Safety.fromSzurubooruId(json["safety"].string) }
         val width by lazy { json["canvasWidth"].int }
         val height by lazy { json["canvasHeight"].int }

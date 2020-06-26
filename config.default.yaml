@@ -43,11 +43,13 @@ tags:
 #      to: hero
 #    - from: copyright
 #      to: series
+#    - from: meta
+#      to: extra
 
 
 szurubooru: # Szurubooru configuration
   apiPath: http://szurubooru.local/api/
-  dataPath: http://szurubooru.local/data/
+  dataPath: http://szurubooru.local/
   username: auto-tagger # Auto-tagger should have its own separate account, make sure it has high enough privileges.
   password: auto-tagger
 

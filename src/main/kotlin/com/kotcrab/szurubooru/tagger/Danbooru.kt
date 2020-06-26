@@ -144,7 +144,8 @@ class Danbooru(private val config: DanbooruDto) {
         General(0, "general"),
         Artist(1, "artist"),
         Copyright(3, "copyright"),
-        Character(4, "character");
+        Character(4, "character"),
+        Meta(5, "meta");
 
         companion object {
             fun fromDanbooruId(danbooruId: Int): TagCategory {

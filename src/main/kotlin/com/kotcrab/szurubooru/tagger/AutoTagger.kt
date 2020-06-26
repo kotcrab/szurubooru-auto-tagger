@@ -65,7 +65,7 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
         log("Reading tag map...")
         tagMap = readTagMap()
 
-        log("Obtaining tags.json...")
+        log("Obtaining tags...")
         szuruTags = szurubooru.getTags()
         szuruTagCategories = szurubooru.getTagCategories()
         tagNameRegex = Regex(szurubooru.getInfo().tagNameRegex)
