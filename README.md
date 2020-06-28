@@ -13,7 +13,7 @@ tag and tag category remapping.
  
 #### Usage
 
-1. Make sure you have Java 8 installed. 
+1. Make sure you have Java 11 or newer installed. 
 2. Get jar from [Releases](https://github.com/kotcrab/szurubooru-auto-tagger/releases) page or build it yourself.
 3. Create separate account for auto-tagger and give it high enough privileges.
 4. On Szurubooru create tag categories: `general`, `artist`, `character`, `copyright`, `meta`. Note: you can remap categories in config file.
