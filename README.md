@@ -2,7 +2,17 @@
 
 IQDB and Danbooru based auto tagger for [szurubooru2](https://github.com/rr-/szurubooru).
 
+#### Notice
+
+I'm no longer actively maintaining this project. I'll try to fix critical bugs
+and merge pull requests that fixes bugs but no new features will be added.
+This tool should continue to work until external APIs change too much to keep up.
+
+I think this project deserves a rewrite to fix bad design decisions, but I'm
+no longer using szurubooru, so I won't be doing that.
+
 #### How this works
+
 Auto tagger searches for all posts having trigger tag (`auto_tagme` by default), then sends post images to IQDB in order
 to find matching image on Danbooru. When match is found, Danbooru tags, post safety and notes are retrieved and set for Szurubooru post.
 New tag is added to mark post as being managed by auto tagger (`auto_tagged` by default). Later auto tagger may update
