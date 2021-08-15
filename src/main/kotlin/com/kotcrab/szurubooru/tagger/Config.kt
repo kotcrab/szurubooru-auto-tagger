@@ -1,6 +1,6 @@
 package com.kotcrab.szurubooru.tagger
 
-import java.util.*
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 
 /**
  * Refer to `config.default.yaml` for more complete description.
@@ -8,12 +8,14 @@ import java.util.*
  */
 
 /** Represents single remapping. */
+@JsonIgnoreProperties(ignoreUnknown = true)
 class RemapDto {
     var from = ""
     var to = ""
 }
 
 /** Danbooru configuration. */
+@JsonIgnoreProperties(ignoreUnknown = true)
 class DanbooruDto {
     var anonymous = true
     var username = "your-username"
@@ -22,12 +24,14 @@ class DanbooruDto {
 }
 
 /** Tag escaping configuration. */
+@JsonIgnoreProperties(ignoreUnknown = true)
 class TagEscapingDto {
     var escapeCharacters = "/+"
     var escapeWith = "_"
 }
 
 /** Szurubooru configuration. */
+@JsonIgnoreProperties(ignoreUnknown = true)
 class SzurubooruDto {
     var apiPath = "http://szurubooru.local/api/"
     var dataPath = "http://szurubooru.local/data/"
@@ -36,12 +40,14 @@ class SzurubooruDto {
 }
 
 /** Single instance check configuration. */
+@JsonIgnoreProperties(ignoreUnknown = true)
 class SingleInstanceDto {
     var enabled = true
     var port = 54212
 }
 
 /** Tags configuration. */
+@JsonIgnoreProperties(ignoreUnknown = true)
 class TagsDto {
     var obtainAliases = true
     var obtainSuggestions = false
@@ -52,6 +58,7 @@ class TagsDto {
     var remapCategories: List<RemapDto> = ArrayList()
 }
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 class ConfigDto {
     var triggerTag = "auto_tagme"
     var managedTag = "auto_tagged"

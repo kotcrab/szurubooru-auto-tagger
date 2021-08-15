@@ -1,7 +1,9 @@
 package com.kotcrab.szurubooru.tagger
 
-import com.esotericsoftware.yamlbeans.YamlReader
-import com.esotericsoftware.yamlbeans.YamlWriter
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.salomonbrys.kotson.jsonArray
 import com.github.salomonbrys.kotson.jsonObject
 import com.google.gson.JsonObject
@@ -9,19 +11,22 @@ import com.overzealous.remark.IgnoredHtmlElement
 import com.overzealous.remark.Options
 import com.overzealous.remark.Remark
 import org.jsoup.Jsoup
-import java.io.*
+import java.io.File
+import java.io.FileFilter
+import java.io.IOException
 import java.net.BindException
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
-import java.util.*
 import kotlin.system.exitProcess
 
 /** @author Kotcrab */
 class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
     private lateinit var lockSocket: ServerSocket
+    private val yamlMapper = ObjectMapper(YAMLFactory())
+        .registerModule(KotlinModule())
 
     val danbooru = Danbooru(config.danbooru)
     val szurubooru = Szurubooru(config.szurubooru)
@@ -46,7 +51,7 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
     var szuruTagCategories: List<String>
     var tagNameRegex: Regex
 
-    var tagMap: HashMap<String, String>
+    var tagMap: MutableMap<String, String>
 
     init {
         if (config.singleInstance.enabled) {
@@ -75,22 +80,17 @@ class AutoTagger(private val config: ConfigDto, private val workingDir: File) {
                 "Make sure they exist or modify tag category remapping configuration.")
     }
 
-    @Suppress("UNCHECKED_CAST")
-    fun readTagMap(): HashMap<String, String> {
+    fun readTagMap(): MutableMap<String, String> {
         val tagMapFile = workingDir.child(config.tags.tagMapFile)
-        if (tagMapFile.exists()) {
-            val tagMap = YamlReader(FileReader(tagMapFile)).read(HashMap::class.java)
-            tagMap ?: return HashMap()
-            return tagMap as HashMap<String, String>
-        } else {
-            return HashMap()
+        if (!tagMapFile.exists()) {
+            return mutableMapOf()
         }
+        return yamlMapper.readValue(tagMapFile)
     }
 
     fun saveTagMap() {
-        val writer = YamlWriter(FileWriter(config.tags.tagMapFile))
-        writer.write(tagMap)
-        writer.close()
+        val tagMapFile = workingDir.child(config.tags.tagMapFile)
+        yamlMapper.writeValue(tagMapFile, tagMap)
     }
 
     fun run(task: Task, taskArguments: List<String>?) {

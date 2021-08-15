@@ -1,8 +1,10 @@
 package com.kotcrab.szurubooru.tagger
 
-import com.esotericsoftware.yamlbeans.YamlReader
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.readValue
 import java.io.File
-import java.io.FileReader
 import kotlin.system.exitProcess
 
 /** @author Kotcrab */
@@ -67,7 +69,8 @@ fun printHelp() {
 }
 
 fun loadConfig(path: String): ConfigDto {
-    val reader = YamlReader(FileReader(path))
-    return reader.read(ConfigDto::class.java)
+    val yamlMapper = ObjectMapper(YAMLFactory())
+        .registerModule(KotlinModule())
+    return yamlMapper.readValue(File(path))
 }
 
